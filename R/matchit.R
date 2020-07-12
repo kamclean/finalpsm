@@ -15,7 +15,7 @@
 #' @import tibble
 #' @import tidyr
 #' @importFrom finalfit ff_formula
-#' @importFrom MatchIt matchit matchdata
+#' @importFrom MatchIt matchit match.data
 #' @export
 
 # Function
