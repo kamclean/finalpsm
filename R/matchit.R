@@ -47,11 +47,10 @@ matchit <- function(.data, strata, explanatory, id = NULL, dependent = NULL, met
 
   data_out <- data_out %>%
     dplyr::left_join(.data %>% dplyr::select(-tidyselect::any_of(names(data_out)[names(data_out)!="rowid"])),
-                     by = "rowid") %>%
-    dplyr::select(-rowid)
+                     by = "rowid")
 
   if(keep_all==F){data_out <- data_out %>%
-    dplyr::select(tidyselect::all_of(c(id, strata,strata_binary, explanatory)),
+    dplyr::select(tidyselect::all_of(c("rowid", id, strata,strata_binary, explanatory)),
                   tidyselect::any_of(c("distance", "weights","subclass")),
                   tidyselect::any_of(c(dependent)))}
 
