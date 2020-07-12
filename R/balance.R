@@ -4,9 +4,12 @@
 #' @description Derive formatted balance table from matchit output
 #' @param matchit_out Output from matchit function
 #' @param threshold_smd Threshold below which the absolute standardised mean difference is considered balanced (default = 0.2). If formal threshold is required, this should be set to NULL.
-#' @import tidyverse
+#' @import dplyr
 #' @import magrittr
+#' @import tidyr
 #' @import tibble
+#' @import purrr
+#' @import tidyselect
 #' @importFrom MatchIt match.data
 #' @importFrom stringr str_split
 #' @importFrom Hmisc wtd.mean wtd.var
@@ -16,7 +19,8 @@
 #' @export
 
 balance <- function(matchit_out, threshold_smd = 0.2){
-  require(tidyverse); require(magrittr); require(MatchIt); require(stringr);
+  require(dplyr); require(tidyr); require(purrr); require(tibble);
+  require(magrittr); require(MatchIt); require(stringr);require(tidyselect)
   require(Hmisc); require(scales); require(stddiff); require(zoo)
 
   object <- matchit_out$object
