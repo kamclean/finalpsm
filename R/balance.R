@@ -9,7 +9,7 @@
 #' @import tibble
 #' @importFrom MatchIt match.data
 #' @importFrom stringr str_split
-#' @importFrom Hmisc wtd.mean wtd_var
+#' @importFrom Hmisc wtd.mean wtd.var
 #' @importFrom scales percent
 #' @importFrom zoo na.locf
 #' @importFrom stddiff stddiff.category
