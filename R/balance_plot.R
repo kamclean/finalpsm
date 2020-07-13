@@ -1,7 +1,23 @@
-matchit_out <- output
-type = c("jitter", "density", "covariate")
+# balance_table--------------------------------
+# Documentation
+#' Derive formatted balance table from matchit output
+#' @description Derive formatted balance table from matchit output
+#' @param matchit_out Output from matchit function
+#' @param type Selection for plot being produced to allow visual assessment of balance. This includes a jitter or density plot (propensity score balance overall), and covariate plot (propensity score balance for individual variables)
+#' @import dplyr
+#' @import MatchIt
+#' @import tidyr
+#' @import tibble
+#' @import stringr
+#' @import ggplot2
+#' @import tidyselect
+#' @import purrr
+
+#' @export
+
+
 balance_plot <- function(matchit_out, type = "covariate"){
-  require(MatchIt);require(stringr);require(ggplot2);require(dplyr);require(tidyr)
+  require(MatchIt);require(stringr);require(ggplot2);require(dplyr);require(tidyr);require(purrr)
 
 
   # Extract model info from matchit output
@@ -78,6 +94,3 @@ balance_plot <- function(matchit_out, type = "covariate"){
 
 
     return(out)}
-
-
-balance_plot(output, type = "jitter")
