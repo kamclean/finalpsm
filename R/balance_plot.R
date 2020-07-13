@@ -36,6 +36,8 @@ balance_plot <- function(matchit_out, type = "covariate"){
       dplyr::select(strata, distance, weights) %>%
       ggplot(aes(x = distance, y = eval(parse(text = strata)), colour = eval(parse(text = strata)))) +
       geom_jitter(aes(size = weights), alpha = 0.7) +
+      xlab("Propensity score (distance)") +
+      ylab("Strata") +
       labs(color = "Strata") +
       theme_bw()}
 
@@ -44,7 +46,7 @@ balance_plot <- function(matchit_out, type = "covariate"){
       dplyr::select(strata, distance) %>%
       ggplot(aes(x = distance, group =eval(parse(text = strata)), colour = eval(parse(text = strata)))) +
       geom_density(alpha = 0.7) +
-
+      xlab("Propensity score (distance)") +
       labs(color = "Strata") +
       theme_bw()}
 
@@ -65,7 +67,8 @@ balance_plot <- function(matchit_out, type = "covariate"){
         ggplot(aes(x = distance, y = value, group = eval(parse(text = strata)), color = eval(parse(text = strata)))) +
         geom_point(alpha = 0.2) +
         geom_smooth(method = "loess", se = F) +
-        xlab("Propensity score") +
+        xlab("Propensity score (distance)") +
+        ylab("") +
         theme_bw() +
         facet_wrap(~name, scales = "free_y") +
         labs(color = "Strata")}
@@ -86,6 +89,7 @@ balance_plot <- function(matchit_out, type = "covariate"){
       geom_point(alpha = 0.2) +
       geom_smooth(method = "loess", se = F) +
       xlab("Propensity score") +
+      ylab("") +
       theme_bw() +
       facet_wrap(~name, scales = "free_y") +
       labs(color = "Strata")}
