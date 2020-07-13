@@ -1,4 +1,4 @@
-# balance--------------------------------
+# balance_table--------------------------------
 # Documentation
 #' Derive formatted balance table from matchit output
 #' @description Derive formatted balance table from matchit output
@@ -18,7 +18,7 @@
 #' @importFrom stddiff stddiff.category
 #' @export
 
-balance <- function(matchit_out, threshold_smd = 0.2){
+balance_table <- function(matchit_out, threshold_smd = 0.2){
   require(dplyr); require(tidyr); require(purrr); require(tibble);
   require(magrittr); require(MatchIt); require(stringr);require(tidyselect)
   require(Hmisc); require(scales); require(stddiff); require(zoo)
