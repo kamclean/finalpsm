@@ -94,7 +94,7 @@ finalpsm <- function(matchit_out, dependent, explanatory = NULL, balance = T, me
       dplyr::mutate(label = ifelse(n>1, "", label)) %>%
       dplyr::select(-n)
 
-    out <- list("balance" = if(balance==T){finalpsm::balance(matchit_out)}else{NULL},
+    out <- list("balance" = if(balance==T){finalpsm::balance_table(matchit_out)}else{NULL},
                 "fit" = if(fit==T){model_fit}else{NULL},
                 "table" = model_table,
                 "metric" = model_metric) %>%

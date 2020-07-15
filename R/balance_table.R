@@ -53,7 +53,7 @@ balance_table <- function(matchit_out, threshold_smd = 0.2){
                   unm_treated = "Means Treated",
                   unm_control = "Means Control",
                   unm_smd = "Std. Mean Diff.") %>%
-    dplyr::mutate(unm_smd = abs(unm_smd)) %>%
+    dplyr::mutate(unm_smd = unm_smd) %>%
     dplyr::select(lab_lvl, unm_treated, unm_control, unm_smd)
 
   mat_data <- matchit_summary$sum.matched %>%
@@ -64,7 +64,7 @@ balance_table <- function(matchit_out, threshold_smd = 0.2){
                   mat_treated = "Means Treated",
                   mat_control = "Means Control",
                   mat_smd = "Std. Mean Diff.") %>%
-    dplyr::mutate(mat_smd = abs(mat_smd)) %>%
+    dplyr::mutate(mat_smd = mat_smd) %>%
     dplyr::select(lab_lvl, mat_treated, mat_control, mat_smd)
 
   # Get labels and levels for all variables
