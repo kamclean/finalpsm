@@ -23,6 +23,8 @@ balance_table <- function(matchit_out, threshold_smd = 0.2){
   require(magrittr); require(MatchIt); require(stringr);require(tidyselect)
   require(Hmisc); require(scales); require(stddiff); require(zoo)
 
+  object <- matchit_out$object
+
   # Extract model info from matchit output
   formula_text <- summary(object)[[1]]$formula %>% deparse() %>%
     paste0(collapse = "") %>% stringr::str_squish()
