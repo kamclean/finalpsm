@@ -244,8 +244,8 @@ if(nrow(tab_bal %>% dplyr::filter(class == "numeric"))>0){
     if(is.numeric(threshold_smd)==T){
 
     tab_bal_final <- tab_bal_final %>%
-    dplyr::mutate(unm_balance = ifelse(as.numeric(unm_smd)<threshold_smd, "Yes", "No"),
-                  mat_balance = ifelse(as.numeric(mat_smd)<threshold_smd, "Yes", "No")) %>%
+    dplyr::mutate(unm_balance = ifelse(abs(as.numeric(unm_smd))<threshold_smd, "Yes", "No"),
+                  mat_balance = ifelse(abs(as.numeric(mat_smd))<threshold_smd, "Yes", "No")) %>%
     dplyr::select(label, level,
                   unm_treated, unm_control, unm_smd, unm_balance,
                   mat_treated, mat_control, mat_smd, mat_balance)}}
