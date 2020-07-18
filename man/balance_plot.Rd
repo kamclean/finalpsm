@@ -4,12 +4,14 @@
 \alias{balance_plot}
 \title{Derive formatted balance table from matchit output}
 \usage{
-balance_plot(matchit_out, type = "covariate")
+balance_plot(matchit_out, type = "covariate", threshold = 0.2)
 }
 \arguments{
 \item{matchit_out}{Output from matchit function}
 
 \item{type}{Selection for plot being produced to allow visual assessment of balance. This includes a jitter or density plot (propensity score balance overall), and covariate plot (propensity score balance for individual variables)}
+
+\item{threshold}{Selection for plot being produced to allow a threshold of balance to be set regarding the standardised mean difference (default =  0.2)}
 }
 \description{
 Derive formatted balance table from matchit output
