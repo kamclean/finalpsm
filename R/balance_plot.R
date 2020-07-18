@@ -16,7 +16,7 @@
 #' @export
 
 
-balance_plot <- function(matchit_out, type = "covariate"){
+balance_plot <- function(matchit_out, type = "covariate", threshold = 0.2){
   require(MatchIt);require(stringr);require(ggplot2);require(dplyr);require(tidyr);require(purrr)
 
 
@@ -95,6 +95,30 @@ balance_plot <- function(matchit_out, type = "covariate"){
       labs(color = "Strata")}
 
     out <- list("factor" =balance_factor, "numeric"= balance_numeric)}
+
+  if(type =="love"){
+
+
+    out <- balance_table(output, threshold = threshold) %>%
+      dplyr::select(label, unm_smd, mat_smd) %>%
+      dplyr::distinct() %>%
+      tidyr::pivot_longer(cols = c("unm_smd", "mat_smd"),
+                          names_to = "Sample", values_to = "SMD") %>%
+      dplyr::mutate(SMD = abs(as.numeric(SMD)),
+                    label = factor(label) %>% forcats::fct_rev(),
+                    Sample = ifelse(Sample=="unm_smd", "Unmatched", "Matched") %>% factor() %>% forcats::fct_rev()) %>%
+      dplyr::mutate(balance = ifelse(SMD>threshold, "No", "Yes")) %>%
+      tidyr::pivot_wider(names_from = "Sample", values_from = c("SMD", "balance")) %>%
+      ggplot() +
+      aes(y = label) +
+      geom_segment(aes(x = SMD_Unmatched, xend = SMD_Matched, yend = label, colour = balance_Matched), arrow = arrow(type = "closed")) +
+      geom_vline(xintercept = 0) +
+      geom_vline(xintercept = 0.2, linetype = "dashed") +
+      scale_colour_manual(values = c("green","red")) +
+
+      scale_x_continuous(name = "Absolute Standardised Mean Difference (SMD)") +
+      scale_y_discrete(name = "Covariate") +
+      theme_bw()}
 
 
     return(out)}
