@@ -115,7 +115,7 @@ balance_plot <- function(matchit_out, type = "covariate", threshold = 0.2){
       geom_segment(aes(x = SMD_Unmatched, xend = SMD_Matched, yend = label, colour = balance_Matched), arrow = arrow(type = "closed")) +
       geom_vline(xintercept = 0) +
       geom_vline(xintercept = threshold, linetype = "dashed") +
-      scale_colour_manual(values = list("Yes" = "green","No" = "red")) +
+      scale_colour_manual(name = "Balance", values = list("Yes" = "green","No" = "red")) +
 
       scale_x_continuous(name = "Absolute Standardised Mean Difference (SMD)") +
       scale_y_discrete(name = "Covariate") +
