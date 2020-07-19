@@ -8,7 +8,7 @@ finalpsm(matchit_out, dependent, explanatory = NULL, balance = T,
   metrics = T, fit = T)
 }
 \arguments{
-\item{matchit_out}{Dataframe}
+\item{matchit_out}{Output from the finalpsm::matchit() function.}
 
 \item{dependent}{Character vector of length 1: quoted name of dependent variable. Can be continuous, a binary factor, or a survival object of form Surv(time, status).}
 
