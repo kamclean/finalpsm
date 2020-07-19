@@ -8,7 +8,8 @@
 #' @param id Vector of column names containing patient identification variables that are to be retained following matching (no use within MatchIt::matchit()).
 #' @param dependent Vector of column names containing dependent (outcome) variables that are to be retained following matching (no use within MatchIt::matchit()).
 #' @param method As per MatchIt::matchit(). This argument specifies a matching method. Currently, "exact" (exact matching), "full" (full matching), "genetic" (genetic matching), "nearest" (nearest neighbor matching), "optimal" (optimal matching), and "subclass" (subclassification) are available. The default is "nearest". Note that within each of these matching methods, MatchIt offers a variety of options.
-#' @param keep_all Keep all variables within the original dataset (default = FALSE)
+#' @param keep_col Keep all columns within the original dataset (default = FALSE)
+#' @param keep_unmatch Keep unmatched patients within the output (default = TRUE)
 #' @param ... Additional arguments to be passed to a variety of matching methods.
 #' @return Nested list of (1) "object" - the MatchIt::matchit() output and (2) "data": the matched dataset.
 #' @import dplyr
@@ -19,7 +20,8 @@
 #' @export
 
 # Function
-matchit <- function(.data, strata, explanatory, id = NULL, dependent = NULL, method = "full",keep_all = F, ...){
+matchit <- function(.data, strata, explanatory, id = NULL, dependent = NULL,
+                    method = "full",keep_col = F, keep_unmatch = T, ...){
   require(tibble);require(dplyr);require(tidyr);require(tidyselect)
   require(finalfit);require(MatchIt)
 
@@ -43,15 +45,25 @@ matchit <- function(.data, strata, explanatory, id = NULL, dependent = NULL, met
                              warning=function(w) {if(endsWith(conditionMessage(w), "to be the same as your original data."))
                                invokeRestart("muffleWarning")})
 
-  data_out = MatchIt::match.data(object) %>% tibble::as_tibble()
+  data_matchit = MatchIt::match.data(object) %>% tibble::as_tibble()
 
-  data_out <- data_out %>%
-    dplyr::left_join(.data %>% dplyr::select(-tidyselect::any_of(names(data_out)[names(data_out)!="rowid"])),
-                     by = "rowid")
+  # determine what patients were matched
+  data_out <- object$model$data %>%
+    dplyr::mutate(distance = output$object$model$fitted.values) %>%
+    dplyr::left_join(.data %>% dplyr::select(-tidyselect::any_of(names(data_matchit)[names(data_matchit)!="rowid"])),
+                     by = "rowid") %>%
+    dplyr::left_join(data_out %>% dplyr::select(any_of(c("rowid", "distance", "weights","subclass"))),
+                     by=c("rowid", "distance")) %>%
+    dplyr::mutate(match = factor(ifelse(is.na(weights)==T, "No", "Yes")))
 
-  if(keep_all==F){data_out <- data_out %>%
+  if(keep_unmatch == F){data_out %>%
+      dplyr::filter(match =="Yes") %>%
+      dplyr::select(-match)}
+
+
+  if(keep_col==F){data_out <- data_out %>%
     dplyr::select(tidyselect::all_of(c("rowid", id, strata,strata_binary, explanatory)),
-                  tidyselect::any_of(c("distance", "weights","subclass")),
+                  tidyselect::any_of(c("distance", "weights","subclass", "match")),
                   tidyselect::any_of(c(dependent)))}
 
   out <- list("object" = object, "data" = data_out)
