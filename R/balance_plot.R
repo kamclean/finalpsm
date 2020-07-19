@@ -52,7 +52,6 @@ balance_plot <- function(matchit_out, type = "covariate", threshold = 0.2){
                                                    paste0(strata_level[[2]], "\n(Unmatched)"))))
 
 
-plot(matchit_out$object, type= "hist")
   if(type=="jitter"){
 
     out <- data_full %>%
