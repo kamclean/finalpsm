@@ -4,6 +4,7 @@
 #' @description Derive formatted balance table from matchit output
 #' @param matchit_out Output from matchit function
 #' @param threshold_smd Threshold below which the absolute standardised mean difference is considered balanced (default = 0.2). If formal threshold is required, this should be set to NULL.
+#' @param p Test for significant differences between treatment groups to assess balance before and after matching (default = FALSE)
 #' @import dplyr
 #' @import magrittr
 #' @import tidyr
@@ -15,10 +16,15 @@
 #' @importFrom Hmisc wtd.mean wtd.var
 #' @importFrom scales percent
 #' @importFrom zoo na.locf
-#' @importFrom stddiff stddiff.category
+#' @importFrom stddiff stddiff.category stddiff.numeric
 #' @export
 
-balance_table <- function(matchit_out, threshold_smd = 0.2){
+matchit_out <- output
+threshold_smd = 0.2
+p=FALSE
+
+
+balance_table <- function(matchit_out, threshold_smd = 0.2, p=FALSE){
   require(dplyr); require(tidyr); require(purrr); require(tibble);
   require(magrittr); require(MatchIt); require(stringr);require(tidyselect)
   require(Hmisc); require(scales); require(stddiff); require(zoo)
@@ -36,218 +42,187 @@ balance_table <- function(matchit_out, threshold_smd = 0.2){
 
   # Get matched dataset
   data <- matchit_out$data %>%
-    dplyr::select(any_of(c(dependent,strata,strata_binary, "distance", "weights", "subclass"))) %>%
-    tibble::as_tibble() %>%
-    dplyr::mutate(strata_binary = dplyr::pull(., strata_binary))
+    dplyr::mutate(strata_01 = dplyr::pull(., strata_binary))
 
-  data_con <- dplyr::filter(data, strata_binary=="0")
-  data_trt <- dplyr::filter(data, strata_binary=="1")
+  # Numeric balance data---------------------
+  tab_bal_num <- NULL
+  var_numeric <- data %>%
+    dplyr::select(all_of(dependent)) %>%
+    dplyr::select_if(is.numeric) %>%
+    names()
 
-  matchit_summary <- summary(object, standardize = TRUE)
-  # Unmatched data balance
-  unm_data <- matchit_summary$sum.all %>%
-    tibble::rownames_to_column(var = "lab_lvl") %>%
-    tibble::as_tibble() %>%
-    dplyr::filter(lab_lvl!="distance") %>%
-    dplyr::select(lab_lvl,
-                  unm_treated = "Means Treated",
-                  unm_control = "Means Control",
-                  unm_smd = "Std. Mean Diff.") %>%
-    dplyr::mutate(unm_smd = unm_smd) %>%
-    dplyr::select(lab_lvl, unm_treated, unm_control, unm_smd)
+  if(length(var_numeric)>=1){
+    data_num <- data %>%
+      dplyr::select(all_of(c(all_of(var_numeric), "weights", "strata_01"))) %>%
+      dplyr::group_split(strata_01) %>%
+      purrr::map_df(function(x){x %>%
+          dplyr::group_by(strata_01) %>%
+          dplyr::summarise_at(vars(all_of(var_numeric), weights), function(x){list(x)}) %>%
+          tidyr::pivot_longer(cols= - c("weights","strata_01"), names_to = "label", values_to = "data") %>%
+          dplyr::select(strata_01, label, data, weights) %>%
+          tidyr::unnest(cols = c(data, weights)) %>%
+          dplyr::mutate_at(vars(data, weights), as.numeric)}) %>%
+      dplyr::mutate(data_weighted = data*weights)
 
-  mat_data <- matchit_summary$sum.matched %>%
-    tibble::rownames_to_column(var = "lab_lvl") %>%
-    tibble::as_tibble() %>%
-    dplyr::filter(lab_lvl!="distance") %>%
-    dplyr::select(lab_lvl,
-                  mat_treated = "Means Treated",
-                  mat_control = "Means Control",
-                  mat_smd = "Std. Mean Diff.") %>%
-    dplyr::mutate(mat_smd = mat_smd) %>%
-    dplyr::select(lab_lvl, mat_treated, mat_control, mat_smd)
+    test_num <- data_num %>%
+      dplyr::group_by(label) %>%
+      dplyr::summarise(unm_p = t.test(data ~ strata_01) %>% broom::tidy() %>% pull(p.value),
+                       mat_p = t.test(data_weighted ~ strata_01) %>% broom::tidy() %>% pull(p.value))
 
-  # Get labels and levels for all variables
-  metadata <- data %>%
-    dplyr::select(names(.)[!names(.) %in% c("distance", "weights", "subclass")]) %>%
-    purrr::map2(.x = ., .y = names(.),
-                function(.x, .y){tibble::tibble("label" = .y, "class" = class(.x)) %>%
-                    dplyr::mutate(level = ifelse(is.null(levels(.x))==T, NA, paste(levels(.x), collapse = ", "))) %>%
-                    tidyr::separate_rows(level, sep = ", ") %>%
-                    dplyr::mutate(lab_lvl = ifelse(class =="factor", paste0(label, level), label))}) %>%
-    dplyr::bind_rows()
+    smd_num <- data_num %>%
+      dplyr::group_by(label) %>%
+      dplyr::summarise(unm_smd = stddiff::stddiff.numeric(as.data.frame(.), gcol = "strata_01", vcol = "data") %>%
+                         tibble::as_tibble() %>% dplyr::pull(stddiff),
+                       mat_smd = stddiff::stddiff.numeric(as.data.frame(.), gcol = "strata_01", vcol = "data_weighted") %>%
+                         tibble::as_tibble() %>% dplyr::pull(stddiff))
 
-  tab_bal <- unm_data %>%
-    dplyr::left_join(mat_data, by="lab_lvl") %>%
-    dplyr::left_join(metadata, by="lab_lvl") %>%
-    dplyr::select(lab_lvl, label, level, class, everything()) %>%
-    dplyr::mutate_at(dplyr::vars(dplyr::ends_with("_smd")), function(x){format(signif(x, 3),nsmall=3)})
+    sum_num <- data_num %>%
+      dplyr::group_by(strata_01, label) %>%
+      dplyr::mutate(data_weighted = data*weights) %>%
+      dplyr::summarise(unm_mean = mean(data, na.rm=T),
+                       unm_sd = sd(data, na.rm=T),
+                       mat_mean = Hmisc::wtd.mean(data, weights),
+                       mat_sd = sqrt(Hmisc::wtd.var(data, weights))) %>%
+      dplyr::filter(! label %in% c(strata_binary, strata, "strata_01")) %>%
+      dplyr::mutate_at(vars(-label, -strata_01), function(x){signif(as.numeric(x), digits=3)}) %>%
+      dplyr::mutate(unm = paste0(unm_mean, " (", unm_sd, ")"),
+                    mat = paste0(mat_mean, " (", mat_sd, ")")) %>%
+      dplyr::ungroup() %>%
+      dplyr::mutate(level = "(SD)",
+                    strata_01 = ifelse(strata_01==0, "con", "trt")) %>%
+      dplyr::select(strata_01, label,level, unm, mat) %>%
+      tidyr::pivot_wider(names_from = "strata_01", values_from = c("unm", "mat"))
 
-  # Calculate numeric vaiable balance stats-------------
-  # Numeric data
-  tab_bal_num_final <- NULL
-if(nrow(tab_bal %>% dplyr::filter(class == "numeric"))>0){
-  data_con_num <- data_con %>%
-    dplyr::select(tidyselect::all_of(tab_bal %>% dplyr::filter(class == "numeric") %>% dplyr::pull(label)), weights) %>%
-    dplyr::summarise_all(function(x){stringr::str_split(paste(x, collapse = ", "), ", ")}) %>%
-    tidyr::pivot_longer(cols= -"weights", names_to = "label") %>%
-    dplyr::select(label, "data_control" = value, "weights_control" = weights)
+    tab_bal_num <- sum_num %>%
+      dplyr::left_join(smd_num, by = "label") %>%
+      dplyr::left_join(test_num, by = "label") %>%
+      dplyr::select(label, level,
+                    unm_con, unm_trt,unm_smd, unm_p,
+                    mat_con, mat_trt, mat_smd, mat_p)}
 
-  data_trt_num <- data_trt %>%
-    dplyr::select(tidyselect::all_of(tab_bal %>% dplyr::filter(class == "numeric") %>% dplyr::pull(label)), weights) %>%
-    dplyr::summarise_all(function(x){stringr::str_split(paste(x, collapse = ", "), ", ")}) %>%
-    tidyr::pivot_longer(cols= - weights, names_to = "label") %>%
-    dplyr::mutate(status = "treated", class = "numeric") %>%
-    dplyr::select(label, "data_treated" = value, "weights_treated" = weights)
+  # Factor balance data-------------------
+  tab_bal_fac <- NULL
 
-  tab_bal_num <- tab_bal %>%
-    dplyr::filter(class == "numeric") %>%
-    dplyr::left_join(data_con_num, by = "label") %>%
-    dplyr::left_join(data_trt_num, by = "label")
+  var_factor <- data %>%
+    dplyr::select(all_of(dependent)) %>%
+    dplyr::select_if(is.factor) %>%
+    names()
 
-  # Numeric balance data
-  tab_bal_num_control <- tab_bal_num %>%
-    dplyr::select(label, data_control,weights_control) %>%
-    tidyr::unnest(cols = c(data_control, weights_control)) %>%
-    dplyr::mutate_at(vars(ends_with("_control")), as.numeric) %>%
-    dplyr::group_by(label) %>%
-    dplyr::summarise(unm_control_mean = mean(data_control, na.rm=T),
-                     unm_control_sd = sd(data_control, na.rm=T),
-                     mat_control_mean = Hmisc::wtd.mean(data_control, weights_control),
-                     mat_control_sd = sqrt(Hmisc::wtd.var(data_control, weights_control)))
+  if(length(var_factor)>=1){
 
-  tab_bal_num_treated <- tab_bal_num %>%
-    dplyr::select(label, data_treated,weights_treated) %>%
-    tidyr::unnest(cols = c(data_treated, weights_treated)) %>%
-    dplyr::mutate_at(vars(ends_with("_treated")), as.numeric) %>%
-    dplyr::group_by(label) %>%
-    dplyr::summarise(unm_treated_mean = mean(data_treated, na.rm=T),
-                     unm_treated_sd = sd(data_treated, na.rm=T),
-                     mat_treated_mean = Hmisc::wtd.mean(data_treated, weights_treated),
-                     mat_treated_sd = sqrt(Hmisc::wtd.var(data_treated, weights_treated)))
+  # Determine the weighted
 
+  sum_fac <- data %>%
+    dplyr::select_at(vars(c("strata_01", all_of(var_factor), "weights"))) %>%
+    dplyr::group_split(strata_01) %>%
+    purrr::map_df(function(x){x %>%
+        dplyr::group_by(strata_01) %>%
+        dplyr::summarise_at(vars(all_of(var_factor), weights), function(x){list(x)}) %>%
+        tidyr::pivot_longer(cols= -all_of(c("weights", "strata_01")), names_to = "label", values_to = "data") %>%
+        dplyr::select(strata_01, label, data, weights) %>%
+        tidyr::unnest(cols = everything()) %>%
+        dplyr::group_by(strata_01, label, data) %>%
+        dplyr::summarise(n_unm = n(),
+                         n_mat = sum(weights, na.rm = T) %>% round())}) %>%
+    dplyr::ungroup()
 
-  tab_bal_num_final <- tab_bal_num %>%
-    dplyr::left_join(tab_bal_num_treated, by="label") %>%
-    dplyr::left_join(tab_bal_num_control, by="label") %>%
-    dplyr::mutate_at(vars(contains("_control_")), function(x){signif(as.numeric(x), digits=3)}) %>%
-    dplyr::mutate_at(vars(contains("_treated_")), function(x){signif(as.numeric(x), digits=3)}) %>%
-    dplyr::mutate(unm_control = paste0(unm_control_mean, " (", unm_control_sd, ")"),
-                  unm_treated = paste0(unm_treated_mean, " (", unm_treated_sd, ")"),
-                  mat_control = paste0(mat_control_mean, " (", mat_control_sd, ")"),
-                  mat_treated = paste0(mat_treated_mean, " (", mat_treated_sd, ")")) %>%
-    dplyr::select(lab_lvl:mat_smd) %>%
-    dplyr::mutate_all(as.character)}
+  data_fac <- sum_fac %>%
+    dplyr::group_by(strata_01, label,data ) %>%
+    dplyr::mutate(unm = map(n_unm, function(x){rep(data, x)}),
+                  mat = map(n_mat, function(x){rep(data, x)})) %>%
+    dplyr::ungroup() %>%
+    dplyr::select(-data, -n_mat, -n_unm) %>%
+    tidyr::pivot_longer(cols = c("unm", "mat"), names_to = "match", values_to = "data") %>%
+    tidyr::unnest(cols = "data") %>%
+    dplyr::mutate(label_level = paste0(label, "___", data))
 
-
-  # Calculate factor vaiable balance stats-------------------
-  # Calculate numbers
-  out_n <- as.data.frame(object$nn) %>%
-    tibble::rownames_to_column(var = "outcome") %>%
-    tibble::as_tibble()
-
-  n_total <- out_n %>%
-    dplyr::filter(outcome %in% c("All", "Matched")) %>%
-    dplyr::mutate(outcome = c("unm", "mat")) %>%
-    tidyr::pivot_wider(names_from = "outcome", values_from = c(Control, Treated)) %>%
-    dplyr::mutate_all(as.numeric) %>%
-    magrittr::set_colnames(c("unm_control_total","mat_control_total","unm_treated_total","mat_treated_total"))
-
-  # Factor data
-  data_fac <- tab_bal %>%
-    dplyr::filter(class == "factor") %>%
-    dplyr::bind_cols(dplyr::bind_rows(purrr::map(n_total,function(x){rep(x, nrow(.))}))) %>%
-    dplyr::full_join(dplyr::filter(metadata, class=="factor"),
-                     by=c("lab_lvl", "label", "level", "class")) %>%
-    dplyr::mutate_at(vars(ends_with("_total")), zoo::na.locf) %>%
-    dplyr::arrange(lab_lvl, label, level) %>%
-    dplyr::select(-lab_lvl, -class, -unm_smd, -mat_smd) %>%
-    dplyr::rename("unm_treated_prop" = unm_treated,"unm_control_prop" = unm_control,
-                  "mat_treated_prop" = mat_treated,"mat_control_prop" = mat_control) %>%
+  smd_fac_unmatch <- data_fac %>%
+    dplyr::filter(match == "unm") %>%
     dplyr::group_split(label) %>%
-    purrr::map(function(x){x %>%
-        dplyr::mutate_at(vars(ends_with("_prop")), function(a){ifelse(is.na(a)==T,1-sum(a, na.rm=T),a)}) %>%
-
-        dplyr::mutate(unm_control_n = round(unm_control_prop*unm_control_total, 0),
-                      unm_treated_n = round(unm_treated_prop*unm_treated_total, 0),
-                      mat_treated_n = round(mat_treated_prop*mat_treated_total, 0),
-                      mat_control_n = round(mat_control_prop*mat_control_total, 0)) %>%
-
-        dplyr::mutate(unm_treated = paste0(unm_treated_n, " (",
-                                           scales::percent(unm_treated_prop, accuracy = 0.1,  suffix = ""), ")"),
-                      unm_control = paste0(unm_control_n, " (",
-                                           scales::percent(unm_control_prop, accuracy = 0.1,  suffix = ""), ")"),
-                      mat_treated = paste0(mat_treated_n, " (",
-                                           scales::percent(mat_treated_prop, accuracy = 0.1,  suffix = ""), ")"),
-                      mat_control = paste0(mat_control_n, " (",
-                                           scales::percent(mat_control_prop, accuracy = 0.1, suffix = ""), ")"))})
-
-  # Balance stats
-  fac_unm_smd <- data_fac %>%
-    purrr::map(function(x){x %>%
-        dplyr::mutate(lab_lvl = paste0(label, "___", level)) %$%
-        dplyr::bind_cols("data" = c(rep(lab_lvl, unm_treated_n),
-                                    rep(lab_lvl, unm_control_n)),
-                         "strata" = c(rep(1, sum(unm_treated_n)),
-                                      rep(0, sum(unm_control_n)))) %$%
-        stddiff::stddiff.category(data = as.data.frame(.),
-                                  gcol = "strata",
-                                  vcol = "data") %>%
+    purrr::map_df(function(x){stddiff::stddiff.category(data = as.data.frame(x),
+                                                        gcol = "strata_01",
+                                                        vcol = "label_level") %>%
         as.data.frame() %>%
-        tibble::rownames_to_column("lab_lvl") %>%
-        tibble::as_tibble() %>%
-        dplyr::mutate(lab_lvl = gsub("NA ", "", lab_lvl)) %>%
-        dplyr::mutate(label = str_split_fixed(lab_lvl, "___", 2)[,1],
-                      level = str_split_fixed(lab_lvl, "___", 2)[,2]) %>%
-        zoo::na.locf() %>%
-        dplyr::select(label, level, "unm_smd" = stddiff) %>%
-        dplyr::mutate(unm_smd = format(round(unm_smd, 3), nsmall=3))}) %>%
-    dplyr::bind_rows()
+        tibble::rownames_to_column(var = "label_level")}) %>%
+    dplyr::mutate(label_level = stringr::str_sub(label_level, 4, nchar(label_level))) %>%
+    tidyr::separate(col = "label_level", into = c("label", "level"), sep = "___") %>%
+    dplyr::select(label:level,"prop_unm_con" = p.c,"prop_unm_trt" = p.t, "unm_smd" = stddiff)  %>%
+    dplyr::group_by(label) %>%
+    tidyr::fill(unm_smd, .direction = "downup") %>%
+    dplyr::ungroup()
 
-  fac_mat_smd <- data_fac %>%
-    purrr::map(function(x){x %>%
-        dplyr::mutate(lab_lvl = paste0(label, "___", level)) %$%
-        dplyr::bind_cols("data" = c(rep(lab_lvl, mat_treated_n),
-                                    rep(lab_lvl, mat_control_n)),
-                         "strata" = c(rep(1, sum(mat_treated_n)),
-                                      rep(0, sum(mat_control_n)))) %$%
-        stddiff::stddiff.category(data = as.data.frame(.),
-                                  gcol = "strata",
-                                  vcol = "data") %>%
+
+  smd_fac_match <- data_fac %>%
+    dplyr::filter(match == "mat") %>%
+    dplyr::group_split(label) %>%
+    purrr::map_df(function(x){stddiff::stddiff.category(data = as.data.frame(x),
+                                                     gcol = "strata_01",
+                                                     vcol = "label_level") %>%
         as.data.frame() %>%
-        tibble::rownames_to_column("lab_lvl") %>%
-        tibble::as_tibble() %>%
-        dplyr::mutate(lab_lvl = gsub("NA ", "", lab_lvl)) %>%
-        dplyr::mutate(label = str_split_fixed(lab_lvl, "___", 2)[,1],
-                      level = str_split_fixed(lab_lvl, "___", 2)[,2]) %>%
-        zoo::na.locf() %>%
-        dplyr::select(label, level, "mat_smd" = stddiff) %>%
-        dplyr::mutate(mat_smd = format(round(mat_smd, 3), nsmall=3))}) %>%
-    dplyr::bind_rows()
+        tibble::rownames_to_column(var = "label_level")}) %>%
+    dplyr::mutate(label_level = stringr::str_sub(label_level, 4, nchar(label_level))) %>%
+    tidyr::separate(col = "label_level", into = c("label", "level"), sep = "___") %>%
+    dplyr::select(label:level,"prop_mat_con" = p.c,"prop_mat_trt" = p.t, "mat_smd" = stddiff) %>%
+    dplyr::group_by(label) %>%
+    tidyr::fill(mat_smd, .direction = "downup") %>%
+    dplyr::ungroup()
 
-  tab_bal_fac <- dplyr::bind_rows(data_fac) %>%
-    dplyr::left_join(fac_unm_smd, by=c("label", "level")) %>%
-    dplyr::left_join(fac_mat_smd, by=c("label", "level")) %>%
-    dplyr::mutate(lab_lvl = paste0(label, level),
-                  class = "factor") %>%
-    dplyr::select(lab_lvl, label, level, class, unm_treated, unm_control, unm_smd,
-                  mat_treated, mat_control, mat_smd)
+  test_fac <- sum_fac %>%
+    dplyr::select(-data) %>%
+    tidyr::pivot_longer(cols = c("n_unm", "n_mat"), names_to = "match", values_to = "n") %>%
+    tidyr::pivot_wider(names_from = c("strata_01"), values_from = "n", values_fn = list) %>%
+    tidyr::unnest(cols = c(`0`, `1`)) %>%
+    dplyr::group_split(label, match) %>%
+    purrr::map_df(function(x){
+
+      info <- x %>% dplyr::select(match, label) %>% dplyr::distinct()
+
+      p <- x %>% dplyr::select(`0`, `1`) %>% chisq.test() %>% broom::tidy() %>% select("p" = p.value)
+
+      return(out = dplyr::bind_cols(info, p))}) %>%
+    dplyr::mutate(match = stringr::str_remove(match, "n_")) %>%
+    tidyr::pivot_wider(names_from = c("match"), values_from = "p") %>%
+    dplyr::select(label, "unm_p" = unm,"mat_p" = mat)
+
+
+  tab_bal_fac <- sum_fac %>%
+    dplyr::rename("level" = data) %>%
+    dplyr::mutate(strata_01 = ifelse(strata_01==0, "con", "trt")) %>%
+    tidyr::pivot_wider(names_from = "strata_01",
+                       values_from = c("n_unm", "n_mat")) %>%
+    dplyr::left_join(smd_fac_unmatch, by = c("label", "level")) %>%
+    dplyr::left_join(smd_fac_match, by = c("label", "level")) %>%
+    dplyr::left_join(test_fac, by = c("label")) %>%
+    dplyr::mutate(unm_trt = paste0(n_unm_trt, " (",
+                                       scales::percent(prop_unm_trt, accuracy = 0.1,  suffix = ""), ")"),
+                  unm_con = paste0(n_unm_con, " (",
+                                       scales::percent(prop_unm_con, accuracy = 0.1,  suffix = ""), ")"),
+                  mat_trt = paste0(n_mat_trt, " (",
+                                       scales::percent(prop_mat_trt, accuracy = 0.1,  suffix = ""), ")"),
+                  mat_con = paste0(n_mat_con, " (",
+                                       scales::percent(prop_mat_con, accuracy = 0.1, suffix = ""), ")")) %>%
+    dplyr::select(label, level,
+                  unm_con, unm_trt,unm_smd,unm_p,
+                  mat_con, mat_trt,mat_smd,mat_p)}
 
   # Create final table-------------------
-  tab_bal_final <- dplyr::bind_rows(tab_bal_num_final, tab_bal_fac) %>%
-    dplyr::arrange(match(lab_lvl, metadata$lab_lvl)) %>%
-    dplyr::mutate(level = ifelse(class=="numeric", "Mean (SD)", level)) %>%
-    dplyr::filter(! label %in% c("strata_binary", strata)) %>%
-    dplyr::select(-lab_lvl, -class)
+  tab_bal_final <- dplyr::bind_rows(tab_bal_fac, tab_bal_num) %>%
+    dplyr::mutate(label = factor(label, levels=dependent),
+                  mat_p = ifelse(mat_p<0.001, "<0.001", format(round(mat_p, 3), nsmall=3)),
+                  unm_p = ifelse(unm_p<0.001, "<0.001", format(round(unm_p, 3), nsmall=3))) %>%
+    dplyr::arrange(label)
 
   if(is.null(threshold_smd)==F){
     if(is.numeric(threshold_smd)==T){
 
-    tab_bal_final <- tab_bal_final %>%
-    dplyr::mutate(unm_balance = ifelse(abs(as.numeric(unm_smd))<threshold_smd, "Yes", "No"),
-                  mat_balance = ifelse(abs(as.numeric(mat_smd))<threshold_smd, "Yes", "No")) %>%
-    dplyr::select(label, level,
-                  unm_treated, unm_control, unm_smd, unm_balance,
-                  mat_treated, mat_control, mat_smd, mat_balance)}}
+      tab_bal_final <- tab_bal_final %>%
+        dplyr::mutate(unm_balance = ifelse(abs(as.numeric(unm_smd))<threshold_smd, "Yes", "No"),
+                      mat_balance = ifelse(abs(as.numeric(mat_smd))<threshold_smd, "Yes", "No")) %>%
+        dplyr::select(label, level,
+                      unm_con, unm_trt,unm_smd,unm_p,unm_balance,
+                      mat_con, mat_trt,mat_smd,mat_p, mat_balance)}}
+
+  if(p==F){tab_bal_final <- tab_bal_final %>% dplyr::select(-mat_p,-unm_p)}
+
 
   return(tab_bal_final)}
