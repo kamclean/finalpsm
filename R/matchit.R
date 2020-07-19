@@ -49,7 +49,7 @@ matchit <- function(.data, strata, explanatory, id = NULL, dependent = NULL,
 
   # determine what patients were matched
   data_out <- object$model$data %>%
-    dplyr::mutate(distance = output$object$model$fitted.values) %>%
+    dplyr::mutate(distance = object$model$fitted.values) %>%
     dplyr::left_join(.data %>% dplyr::select(-tidyselect::any_of(names(data_matchit)[names(data_matchit)!="rowid"])),
                      by = "rowid") %>%
     dplyr::left_join(data_out %>% dplyr::select(any_of(c("rowid", "distance", "weights","subclass"))),
