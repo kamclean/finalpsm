@@ -4,7 +4,7 @@
 \alias{balance_plot}
 \title{Derive formatted balance table from matchit output}
 \usage{
-balance_plot(matchit_out, type = "covariate", threshold = 0.2)
+balance_plot(matchit_out, type = "jitter", threshold = 0.2)
 }
 \arguments{
 \item{matchit_out}{Output from matchit function}

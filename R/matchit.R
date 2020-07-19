@@ -54,10 +54,11 @@ matchit <- function(.data, strata, explanatory, id = NULL, dependent = NULL,
                      by = "rowid") %>%
     dplyr::left_join(data_matchit %>% dplyr::select(any_of(c("rowid", "distance", "weights","subclass"))),
                      by=c("rowid", "distance")) %>%
-    dplyr::mutate(match = factor(ifelse(is.na(weights)==T, "No", "Yes")))
+    dplyr::mutate(match = factor(ifelse(is.na(weights)==T, "Unmatched", "Matched"),
+                                 levels = c("Unmatched", "Matched")))
 
   if(keep_unmatch == F){data_out %>%
-      dplyr::filter(match =="Yes") %>%
+      dplyr::filter(match =="Matched") %>%
       dplyr::select(-match)}
 
 

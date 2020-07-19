@@ -13,11 +13,9 @@
 #' @import ggplot2
 #' @import tidyselect
 #' @import purrr
-
 #' @export
 
-
-balance_plot <- function(matchit_out, type = "covariate", threshold = 0.2){
+balance_plot <- function(matchit_out, type = "jitter", threshold = 0.2){
   require(MatchIt);require(stringr);require(ggplot2);require(dplyr);require(tidyr);require(purrr)
 
   # Extract model info from matchit output
@@ -36,12 +34,12 @@ balance_plot <- function(matchit_out, type = "covariate", threshold = 0.2){
     dplyr::mutate(distance = output$object$model$fitted.values) %>%
     dplyr::left_join(dplyr::select(matchit_out$data, rowid, weights), by = "rowid") %>%
     dplyr::mutate(weights = ifelse(is.na(weights)==T, 1, weights),
-                  match = factor(ifelse(rowid %in% matchit_out$data$rowid, "Matched", "Unmatched")))}
-
+                  match = factor(ifelse(rowid %in% matchit_out$data$rowid, "Matched", "Unmatched"),
+                                 levels = c("Unmatched", "Matched")))}
 
   strata_level <- pull(data_full, strata) %>% levels()
 
-  data_full <- data_full %>%
+  data_final <- data_full %>%
     dplyr::mutate(strata_match = as.character(eval(parse(text = strata)))) %>%
     dplyr::mutate(strata_match = ifelse(match=="Matched", paste0(strata_match, "\n(Matched)"),
                                         paste0(strata_match, "\n(Unmatched)"))) %>%
@@ -51,19 +49,37 @@ balance_plot <- function(matchit_out, type = "covariate", threshold = 0.2){
                                                    paste0(strata_level[[2]], "\n(Matched)"),
                                                    paste0(strata_level[[2]], "\n(Unmatched)"))))
 
+  unmatched <- matchit_out$object$nn %>%
+    tibble::as_tibble() %>%
+    tail(2) %>% unlist() %>% sum()
+
 
   if(type=="jitter"){
+    if(unmatched>0){
+      out <- data_final %>%
+        dplyr::select(strata_match, strata, distance, weights) %>%
+        dplyr::mutate(weights = ifelse(is.na(weights)==T, 1, weights)) %>%
+        ggplot(aes(x = distance, y = strata_match, colour = eval(parse(text = strata)))) +
+        geom_jitter(aes(size = weights), alpha = 0.7, height = .3) +
+        xlab("Propensity score (distance)") +
+        scale_y_discrete(name = "Strata", drop=FALSE) +
+        labs(color = "Strata") +
+        theme_bw()}
 
-    out <- data_full %>%
-      dplyr::select(strata_match, strata, distance, weights) %>%
-      ggplot(aes(x = distance, y = strata_match, colour = eval(parse(text = strata)))) +
-      geom_jitter(aes(size = weights), alpha = 0.7, height = .3) +
-      xlab("Propensity score (distance)") +
-      scale_y_discrete(name = "Strata", drop=FALSE) +
-      labs(color = "Strata") +
-      theme_bw()}
+    if(unmatched==0){
+      out <- data_final %>%
+        dplyr::select(strata, distance, weights) %>%
+        ggplot(aes(x = distance, y = eval(parse(text = strata)), colour = eval(parse(text = strata)))) +
+        geom_jitter(aes(size = weights), alpha = 0.7, height = .3) +
+        xlab("Propensity score (distance)") +
+        scale_y_discrete(name = "Strata", drop=FALSE) +
+        labs(color = "Strata") +
+        theme_bw()}}
+
+
 
   if(type=="density"){
+    if(unmatched>0){
     out <- data_full %>%
       dplyr::select(match, strata, distance) %>%
       ggplot(aes(x = distance, group =eval(parse(text = strata)), colour = eval(parse(text = strata)))) +
@@ -72,6 +88,15 @@ balance_plot <- function(matchit_out, type = "covariate", threshold = 0.2){
       labs(color = "Strata") +
       theme_bw() +
       facet_wrap(~ match, scales ="free_y")}
+
+    if(unmatched==0){
+      out <- data_full %>%
+        dplyr::select(match, strata, distance) %>%
+        ggplot(aes(x = distance, group =eval(parse(text = strata)), colour = eval(parse(text = strata)))) +
+        geom_density(alpha = 0.7) +
+        xlab("Propensity score (distance)") +
+        labs(color = "Strata") +
+        theme_bw()}}
 
 
     if(type=="covariate"){
