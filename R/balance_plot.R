@@ -121,7 +121,7 @@ balance_plot <- function(matchit_out, type = "covariate", threshold = 0.2){
 
   if(type =="love"){
 
-    out <- finalpsm::balance_table(matchit_out, threshold = threshold) %>%
+    out <- finalpsm::balance_table(matchit_out = matchit_out, threshold = threshold) %>%
       dplyr::select(label, unm_smd, mat_smd) %>%
       dplyr::distinct() %>%
       tidyr::pivot_longer(cols = c("unm_smd", "mat_smd"),

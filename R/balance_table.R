@@ -3,7 +3,7 @@
 #' Derive formatted balance table from matchit output
 #' @description Derive formatted balance table from matchit output
 #' @param matchit_out Output from matchit function
-#' @param threshold_smd Threshold below which the absolute standardised mean difference is considered balanced (default = 0.2). If formal threshold is required, this should be set to NULL.
+#' @param threshold Threshold below which the absolute standardised mean difference is considered balanced (default = 0.2). If formal threshold is required, this should be set to NULL.
 #' @param p Test for significant differences between treatment groups to assess balance before and after matching (default = FALSE)
 #' @import dplyr
 #' @import magrittr
@@ -19,7 +19,7 @@
 #' @importFrom stddiff stddiff.category stddiff.numeric
 #' @export
 
-balance_table <- function(matchit_out, threshold_smd = 0.2, p=FALSE){
+balance_table <- function(matchit_out, threshold = 0.2, p=FALSE){
   require(dplyr); require(tidyr); require(purrr); require(tibble);
   require(magrittr); require(MatchIt); require(stringr);require(tidyselect)
   require(Hmisc); require(scales); require(stddiff); require(zoo)
@@ -207,12 +207,12 @@ balance_table <- function(matchit_out, threshold_smd = 0.2, p=FALSE){
                   unm_p = ifelse(unm_p<0.001, "<0.001", format(round(unm_p, 3), nsmall=3))) %>%
     dplyr::arrange(label)
 
-  if(is.null(threshold_smd)==F){
-    if(is.numeric(threshold_smd)==T){
+  if(is.null(threshold)==F){
+    if(is.numeric(threshold)==T){
 
       tab_bal_final <- tab_bal_final %>%
-        dplyr::mutate(unm_balance = ifelse(abs(as.numeric(unm_smd))<threshold_smd, "Yes", "No"),
-                      mat_balance = ifelse(abs(as.numeric(mat_smd))<threshold_smd, "Yes", "No")) %>%
+        dplyr::mutate(unm_balance = ifelse(abs(as.numeric(unm_smd))<threshold, "Yes", "No"),
+                      mat_balance = ifelse(abs(as.numeric(mat_smd))<threshold, "Yes", "No")) %>%
         dplyr::select(label, level,
                       unm_con, unm_trt,unm_smd,unm_p,unm_balance,
                       mat_con, mat_trt,mat_smd,mat_p, mat_balance)}}
