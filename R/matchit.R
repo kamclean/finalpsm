@@ -52,7 +52,7 @@ matchit <- function(.data, strata, explanatory, id = NULL, dependent = NULL,
     dplyr::mutate(distance = object$model$fitted.values) %>%
     dplyr::left_join(.data %>% dplyr::select(-tidyselect::any_of(names(data_matchit)[names(data_matchit)!="rowid"])),
                      by = "rowid") %>%
-    dplyr::left_join(data_out %>% dplyr::select(any_of(c("rowid", "distance", "weights","subclass"))),
+    dplyr::left_join(data_matchit %>% dplyr::select(any_of(c("rowid", "distance", "weights","subclass"))),
                      by=c("rowid", "distance")) %>%
     dplyr::mutate(match = factor(ifelse(is.na(weights)==T, "No", "Yes")))
 
