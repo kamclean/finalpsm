@@ -5,7 +5,7 @@
 \title{Wrapper for MatchIt package}
 \usage{
 matchit(.data, strata, explanatory, id = NULL, dependent = NULL,
-  method = "full", keep_all = F, ...)
+  method = "full", keep_col = F, keep_unmatch = T, ...)
 }
 \arguments{
 \item{.data}{Dataframe}
@@ -20,7 +20,9 @@ matchit(.data, strata, explanatory, id = NULL, dependent = NULL,
 
 \item{method}{As per MatchIt::matchit(). This argument specifies a matching method. Currently, "exact" (exact matching), "full" (full matching), "genetic" (genetic matching), "nearest" (nearest neighbor matching), "optimal" (optimal matching), and "subclass" (subclassification) are available. The default is "nearest". Note that within each of these matching methods, MatchIt offers a variety of options.}
 
-\item{keep_all}{Keep all variables within the original dataset (default = FALSE)}
+\item{keep_col}{Keep all columns within the original dataset (default = FALSE)}
+
+\item{keep_unmatch}{Keep unmatched patients within the output (default = TRUE)}
 
 \item{...}{Additional arguments to be passed to a variety of matching methods.}
 }
