@@ -149,8 +149,8 @@ balance_plot <- function(matchit_out, type = "jitter", threshold = 0.2){
     out <- finalpsm::balance_table(matchit_out = matchit_out, threshold = threshold) %>%
       dplyr::select(label, unm_smd, mat_smd) %>%
       dplyr::filter(unm_smd!=""&mat_smd!="") %>%
-      dplyr::group_by(label) %>%
       dplyr::mutate(label = ifelse(label=="", NA, label)) %>%
+      dplyr::group_by(label) %>%
       tidyr::fill(label, direction = c("downup"))
       dplyr::ungroup() %>%
 
