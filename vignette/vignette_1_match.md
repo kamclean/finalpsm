@@ -712,7 +712,7 @@ is far more sophisticated regarding assessment of balance than
 <td style="text-align: left;">Yes</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">sex</td>
+<td style="text-align: left;"></td>
 <td style="text-align: left;">Male</td>
 <td style="text-align: left;">169 (56.3)</td>
 <td style="text-align: left;">137 (46.0)</td>
@@ -736,7 +736,7 @@ is far more sophisticated regarding assessment of balance than
 <td style="text-align: left;">Yes</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">obstruct</td>
+<td style="text-align: left;"></td>
 <td style="text-align: left;">Yes</td>
 <td style="text-align: left;">59 (19.7)</td>
 <td style="text-align: left;">54 (18.1)</td>
@@ -760,7 +760,7 @@ is far more sophisticated regarding assessment of balance than
 <td style="text-align: left;">Yes</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">differ</td>
+<td style="text-align: left;"></td>
 <td style="text-align: left;">Moderate</td>
 <td style="text-align: left;">219 (73.0)</td>
 <td style="text-align: left;">215 (72.1)</td>
@@ -772,7 +772,7 @@ is far more sophisticated regarding assessment of balance than
 <td style="text-align: left;"></td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">differ</td>
+<td style="text-align: left;"></td>
 <td style="text-align: left;">Poor</td>
 <td style="text-align: left;">44 (14.7)</td>
 <td style="text-align: left;">54 (18.1)</td>
@@ -796,7 +796,7 @@ is far more sophisticated regarding assessment of balance than
 <td style="text-align: left;">Yes</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">surg</td>
+<td style="text-align: left;"></td>
 <td style="text-align: left;">Long</td>
 <td style="text-align: left;">78 (26.0)</td>
 <td style="text-align: left;">76 (25.5)</td>
