@@ -145,7 +145,9 @@ balance_table <- function(matchit_out, threshold = 0.2, p=FALSE){
     dplyr::select(label:level,"prop_unm_con" = p.c,"prop_unm_trt" = p.t, "unm_smd" = stddiff)  %>%
     dplyr::group_by(label) %>%
     tidyr::fill(unm_smd, .direction = "downup") %>%
-    dplyr::ungroup()
+    dplyr::ungroup() %>%
+    dplyr::mutate(label = as.character(label),
+                  level = as.character(level))
 
 
   smd_fac_match <- data_fac %>%
@@ -161,7 +163,9 @@ balance_table <- function(matchit_out, threshold = 0.2, p=FALSE){
     dplyr::select(label:level,"prop_mat_con" = p.c,"prop_mat_trt" = p.t, "mat_smd" = stddiff) %>%
     dplyr::group_by(label) %>%
     tidyr::fill(mat_smd, .direction = "downup") %>%
-    dplyr::ungroup()
+    dplyr::ungroup() %>%
+    dplyr::mutate(label = as.character(label),
+                  level = as.character(level))
 
   test_fac <- sum_fac %>%
     dplyr::select(-data) %>%
@@ -186,6 +190,7 @@ balance_table <- function(matchit_out, threshold = 0.2, p=FALSE){
     dplyr::mutate(strata_01 = ifelse(strata_01==0, "con", "trt")) %>%
     tidyr::pivot_wider(names_from = "strata_01",
                        values_from = c("n_unm", "n_mat")) %>%
+    dplyr::mutate(level = as.character(level)) %>%
     dplyr::left_join(smd_fac_unmatch, by = c("label", "level")) %>%
     dplyr::left_join(smd_fac_match, by = c("label", "level")) %>%
     dplyr::left_join(test_fac, by = c("label")) %>%
@@ -221,7 +226,7 @@ balance_table <- function(matchit_out, threshold = 0.2, p=FALSE){
         dplyr::mutate(n = 1:n()) %>%
         dplyr::ungroup() %>%
         dplyr::mutate_at(vars(label, unm_smd, mat_smd, unm_p, mat_p, unm_balance, mat_balance), as.character) %>%
-        dplyr::mutate(label =  ifelse(n==1, unm_smd, ""),
+        dplyr::mutate(label =  ifelse(n==1, label, ""),
                       unm_smd = ifelse(n==1, unm_smd, ""),
                       mat_smd = ifelse(n==1, mat_smd, ""),
                       unm_p = ifelse(n==1, unm_p, ""),
