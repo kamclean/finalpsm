@@ -19,6 +19,7 @@
 #' @importFrom stddiff stddiff.category stddiff.numeric
 #' @export
 
+
 balance_table <- function(matchit_out, threshold = 0.2, p=FALSE){
   require(dplyr); require(tidyr); require(purrr); require(tibble);
   require(magrittr); require(MatchIt); require(stringr);require(tidyselect)
@@ -215,7 +216,19 @@ balance_table <- function(matchit_out, threshold = 0.2, p=FALSE){
                       mat_balance = ifelse(abs(as.numeric(mat_smd))<threshold, "Yes", "No")) %>%
         dplyr::select(label, level,
                       unm_con, unm_trt,unm_smd,unm_p,unm_balance,
-                      mat_con, mat_trt,mat_smd,mat_p, mat_balance)}}
+                      mat_con, mat_trt,mat_smd,mat_p, mat_balance) %>%
+        dplyr::group_by(label) %>%
+        dplyr::mutate(n = 1:n()) %>%
+        dplyr::mutate_at(vars(unm_smd, mat_smd, unm_p, mat_p, unm_balance, mat_balance), as.character) %>%
+        dplyr::mutate(unm_smd = ifelse(n==1, unm_smd, ""),
+                      mat_smd = ifelse(n==1, mat_smd, ""),
+                      unm_p = ifelse(n==1, unm_p, ""),
+                      mat_p = ifelse(n==1, mat_p, ""),
+                      unm_balance = ifelse(n==1, unm_balance, ""),
+                      mat_balance = ifelse(n==1, mat_balance, "")) %>%
+        dplyr::select(-n)}}
+
+
 
   if(p==F){tab_bal_final <- tab_bal_final %>% dplyr::select(-mat_p,-unm_p)}
 
