@@ -14,7 +14,9 @@
 #' @import tidyselect
 #' @import purrr
 #' @export
-
+matchit_out = output
+type = "love"
+threshold = 0.2
 balance_plot <- function(matchit_out, type = "jitter", threshold = 0.2){
   require(MatchIt);require(stringr);require(ggplot2);require(dplyr);require(tidyr);require(purrr)
 
@@ -99,7 +101,7 @@ balance_plot <- function(matchit_out, type = "jitter", threshold = 0.2){
         theme_bw()}}
 
 
-    if(type=="covariate"){
+  if(type=="covariate"){
     # Factor variable balance
     var_factor <- names(output$data[unlist(purrr::map(output$data, is.factor))])
 
@@ -148,7 +150,9 @@ balance_plot <- function(matchit_out, type = "jitter", threshold = 0.2){
 
     out <- finalpsm::balance_table(matchit_out = matchit_out, threshold = threshold) %>%
       dplyr::select(label, unm_smd, mat_smd) %>%
-      dplyr::distinct() %>%
+      dplyr::filter(unm_smd!=""&mat_smd!="") %>%
+      dplyr::ungroup() %>%
+
       tidyr::pivot_longer(cols = c("unm_smd", "mat_smd"),
                           names_to = "Sample", values_to = "SMD") %>%
       dplyr::mutate(SMD = abs(as.numeric(SMD)),
