@@ -587,6 +587,8 @@ This can be visualised as a density or jitter plot to allow comparison
 of the overall distribution of propensity-scores between the treatment
 groups.
 
+    finalpsm::balance_plot(output, type = "density") / finalpsm::balance_plot(output, type = "jitter")
+
 ![](vignette_1_match_files/figure-markdown_strict/balance_plot1-1.png)
 
 Well balanced groups should follow approximately the same pattern (as in
@@ -599,6 +601,11 @@ this case).
 This can be visualised as a geom\_point plot with a line of best fit to
 allow comparison of the distribution of propensity-scores between
 treatment groups for the different covariates (`explanatory` variables).
+
+    # https://sejdemyr.github.io/r-tutorials/statistics/tutorial8.html
+    covariate <- finalpsm::balance_plot(output, type = "covariate")
+
+    covariate$factor / covariate$numeric
 
 ![](vignette_1_match_files/figure-markdown_strict/balance_plot2-1.png)
 
@@ -618,6 +625,11 @@ displaying covariate balance before and after adjusting.
 
 -   The arrow starts at the unmatched absolute SMD for that variable,
     and points to the absolute SMD following propensity score matching.
+
+<!-- -->
+
+    # https://sejdemyr.github.io/r-tutorials/statistics/tutorial8.html
+    finalpsm::balance_plot(output, type = "love", threshold = 0.2)
 
 ![](vignette_1_match_files/figure-markdown_strict/balance_plot3-1.png)
 
@@ -645,6 +657,8 @@ is far more sophisticated regarding assessment of balance than
 `finalpsm`, however does not work well within the intended `tidyverse` /
 `finalfit` workflow to produce tables formatted for publication.
 
+    finalpsm::balance_table(output, threshold = 0.2) %>% knitr::kable()
+
 <table style="width:100%;">
 <colgroup>
 <col style="width: 8%" />
@@ -664,11 +678,11 @@ is far more sophisticated regarding assessment of balance than
 <th style="text-align: left;">level</th>
 <th style="text-align: left;">unm_con</th>
 <th style="text-align: left;">unm_trt</th>
-<th style="text-align: right;">unm_smd</th>
+<th style="text-align: left;">unm_smd</th>
 <th style="text-align: left;">unm_balance</th>
 <th style="text-align: left;">mat_con</th>
 <th style="text-align: left;">mat_trt</th>
-<th style="text-align: right;">mat_smd</th>
+<th style="text-align: left;">mat_smd</th>
 <th style="text-align: left;">mat_balance</th>
 </tr>
 </thead>
@@ -678,11 +692,11 @@ is far more sophisticated regarding assessment of balance than
 <td style="text-align: left;">(SD)</td>
 <td style="text-align: left;">60.2 (11.7)</td>
 <td style="text-align: left;">59.7 (12.3)</td>
-<td style="text-align: right;">0.037</td>
+<td style="text-align: left;">0.037</td>
 <td style="text-align: left;">Yes</td>
 <td style="text-align: left;">60.2 (12.3)</td>
 <td style="text-align: left;">59.7 (12.3)</td>
-<td style="text-align: right;">0.011</td>
+<td style="text-align: left;">0.011</td>
 <td style="text-align: left;">Yes</td>
 </tr>
 <tr class="even">
@@ -690,11 +704,11 @@ is far more sophisticated regarding assessment of balance than
 <td style="text-align: left;">Female</td>
 <td style="text-align: left;">131 (43.7)</td>
 <td style="text-align: left;">161 (54.0)</td>
-<td style="text-align: right;">0.208</td>
+<td style="text-align: left;">0.208</td>
 <td style="text-align: left;">No</td>
 <td style="text-align: left;">157 (52.3)</td>
 <td style="text-align: left;">161 (54.0)</td>
-<td style="text-align: right;">0.034</td>
+<td style="text-align: left;">0.034</td>
 <td style="text-align: left;">Yes</td>
 </tr>
 <tr class="odd">
@@ -702,23 +716,23 @@ is far more sophisticated regarding assessment of balance than
 <td style="text-align: left;">Male</td>
 <td style="text-align: left;">169 (56.3)</td>
 <td style="text-align: left;">137 (46.0)</td>
-<td style="text-align: right;">0.208</td>
-<td style="text-align: left;">No</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
 <td style="text-align: left;">143 (47.7)</td>
 <td style="text-align: left;">137 (46.0)</td>
-<td style="text-align: right;">0.034</td>
-<td style="text-align: left;">Yes</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">obstruct</td>
 <td style="text-align: left;">No</td>
 <td style="text-align: left;">241 (80.3)</td>
 <td style="text-align: left;">244 (81.9)</td>
-<td style="text-align: right;">0.039</td>
+<td style="text-align: left;">0.039</td>
 <td style="text-align: left;">Yes</td>
 <td style="text-align: left;">257 (85.7)</td>
 <td style="text-align: left;">244 (81.9)</td>
-<td style="text-align: right;">0.103</td>
+<td style="text-align: left;">0.103</td>
 <td style="text-align: left;">Yes</td>
 </tr>
 <tr class="odd">
@@ -726,23 +740,23 @@ is far more sophisticated regarding assessment of balance than
 <td style="text-align: left;">Yes</td>
 <td style="text-align: left;">59 (19.7)</td>
 <td style="text-align: left;">54 (18.1)</td>
-<td style="text-align: right;">0.039</td>
-<td style="text-align: left;">Yes</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
 <td style="text-align: left;">43 (14.3)</td>
 <td style="text-align: left;">54 (18.1)</td>
-<td style="text-align: right;">0.103</td>
-<td style="text-align: left;">Yes</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">differ</td>
 <td style="text-align: left;">Well</td>
 <td style="text-align: left;">37 (12.3)</td>
 <td style="text-align: left;">29 (9.7)</td>
-<td style="text-align: right;">0.116</td>
+<td style="text-align: left;">0.116</td>
 <td style="text-align: left;">Yes</td>
 <td style="text-align: left;">26 (8.7)</td>
 <td style="text-align: left;">29 (9.7)</td>
-<td style="text-align: right;">0.038</td>
+<td style="text-align: left;">0.038</td>
 <td style="text-align: left;">Yes</td>
 </tr>
 <tr class="odd">
@@ -750,35 +764,35 @@ is far more sophisticated regarding assessment of balance than
 <td style="text-align: left;">Moderate</td>
 <td style="text-align: left;">219 (73.0)</td>
 <td style="text-align: left;">215 (72.1)</td>
-<td style="text-align: right;">0.116</td>
-<td style="text-align: left;">Yes</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
 <td style="text-align: left;">218 (72.7)</td>
 <td style="text-align: left;">215 (72.1)</td>
-<td style="text-align: right;">0.038</td>
-<td style="text-align: left;">Yes</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">differ</td>
 <td style="text-align: left;">Poor</td>
 <td style="text-align: left;">44 (14.7)</td>
 <td style="text-align: left;">54 (18.1)</td>
-<td style="text-align: right;">0.116</td>
-<td style="text-align: left;">Yes</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
 <td style="text-align: left;">56 (18.7)</td>
 <td style="text-align: left;">54 (18.1)</td>
-<td style="text-align: right;">0.038</td>
-<td style="text-align: left;">Yes</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">surg</td>
 <td style="text-align: left;">Short</td>
 <td style="text-align: left;">222 (74.0)</td>
 <td style="text-align: left;">222 (74.5)</td>
-<td style="text-align: right;">0.011</td>
+<td style="text-align: left;">0.011</td>
 <td style="text-align: left;">Yes</td>
 <td style="text-align: left;">234 (78.0)</td>
 <td style="text-align: left;">222 (74.5)</td>
-<td style="text-align: right;">0.082</td>
+<td style="text-align: left;">0.082</td>
 <td style="text-align: left;">Yes</td>
 </tr>
 <tr class="even">
@@ -786,12 +800,12 @@ is far more sophisticated regarding assessment of balance than
 <td style="text-align: left;">Long</td>
 <td style="text-align: left;">78 (26.0)</td>
 <td style="text-align: left;">76 (25.5)</td>
-<td style="text-align: right;">0.011</td>
-<td style="text-align: left;">Yes</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
 <td style="text-align: left;">66 (22.0)</td>
 <td style="text-align: left;">76 (25.5)</td>
-<td style="text-align: right;">0.082</td>
-<td style="text-align: left;">Yes</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
 </tr>
 </tbody>
 </table>
