@@ -220,8 +220,9 @@ balance_table <- function(matchit_out, threshold = 0.2, p=FALSE){
         dplyr::group_by(label) %>%
         dplyr::mutate(n = 1:n()) %>%
         dplyr::ungroup() %>%
-        dplyr::mutate_at(vars(unm_smd, mat_smd, unm_p, mat_p, unm_balance, mat_balance), as.character) %>%
-        dplyr::mutate(unm_smd = ifelse(n==1, unm_smd, ""),
+        dplyr::mutate_at(vars(label, unm_smd, mat_smd, unm_p, mat_p, unm_balance, mat_balance), as.character) %>%
+        dplyr::mutate(label =  ifelse(n==1, unm_smd, ""),
+                      unm_smd = ifelse(n==1, unm_smd, ""),
                       mat_smd = ifelse(n==1, mat_smd, ""),
                       unm_p = ifelse(n==1, unm_p, ""),
                       mat_p = ifelse(n==1, mat_p, ""),
