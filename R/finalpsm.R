@@ -148,7 +148,7 @@ finalpsm <- function(matchit_out, dependent, explanatory = NULL, subclass = T, b
       model_table <- data %>%
         finalfit::finalfit(dependent= dependent,
                            explanatory =  explanatory,
-                           random_effect = if("subclass" %in% names(data)&random_effect==T){"subclass"}else{NULL},
+                           random_effect = if("subclass" %in% names(data)&subclass==T){"subclass"}else{NULL},
                            keep_fit_id = T) %>%
         tibble::as_tibble() %>%
         dplyr::rename_at(vars(contains("Dependent:")), function(x){x="label"}) %>%
