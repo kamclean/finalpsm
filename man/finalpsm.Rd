@@ -4,8 +4,8 @@
 \alias{finalpsm}
 \title{Wrapper for perfoming propensity-score matching with finalfit}
 \usage{
-finalpsm(matchit_out, dependent, explanatory = NULL, balance = T,
-  metrics = T, fit = T)
+finalpsm(matchit_out, dependent, explanatory = NULL, subclass = T,
+  balance = T, metrics = T, fit = T)
 }
 \arguments{
 \item{matchit_out}{Output from the finalpsm::matchit() function.}
@@ -13,6 +13,8 @@ finalpsm(matchit_out, dependent, explanatory = NULL, balance = T,
 \item{dependent}{Character vector of length 1: quoted name of dependent variable. Can be continuous, a binary factor, or a survival object of form Surv(time, status).}
 
 \item{explanatory}{Character vector of any length: quoted name(s) of explanatory variables (default = NULL - the strata and explanatory variables from the matchit_out object will be used)}
+
+\item{subclass}{Logical value whether subclass should be included as a random-effect (if this form of matching is used).}
 
 \item{balance}{Logical value whether a balance table should be supplied in the output (default = T).}
 

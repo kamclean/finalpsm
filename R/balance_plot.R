@@ -31,7 +31,7 @@ balance_plot <- function(matchit_out, type = "jitter", threshold = 0.2){
 
   if("match" %in% names(matchit_out$data)){data_full <- matchit_out$data}
   if(! "match" %in% names(matchit_out$data)){data_full <- object$model$data %>%
-    dplyr::mutate(distance = output$object$model$fitted.values) %>%
+    dplyr::mutate(distance = matchit_out$object$model$fitted.values) %>%
     dplyr::left_join(dplyr::select(matchit_out$data, rowid, weights), by = "rowid") %>%
     dplyr::mutate(weights = ifelse(is.na(weights)==T, 1, weights),
                   match = factor(ifelse(rowid %in% matchit_out$data$rowid, "Matched", "Unmatched"),
@@ -101,9 +101,9 @@ balance_plot <- function(matchit_out, type = "jitter", threshold = 0.2){
 
   if(type=="covariate"){
     # Factor variable balance
-    var_factor <- names(output$data[unlist(purrr::map(output$data, is.factor))])
+    var_factor <- names(matchit_out$data[unlist(purrr::map(matchit_out$data, is.factor))])
 
-    data_factor <- output$data %>%
+    data_factor <- matchit_out$data %>%
       dplyr::select(all_of(c(dependent, strata)), distance) %>%
       dplyr::select_at(vars(any_of(var_factor[which(! var_factor %in% strata)]), strata, distance))
 
@@ -123,9 +123,9 @@ balance_plot <- function(matchit_out, type = "jitter", threshold = 0.2){
 
 
     # Numeric variable balance
-    var_numeric <- names(output$data[unlist(purrr::map(output$data, is.numeric))])
+    var_numeric <- names(matchit_out$data[unlist(purrr::map(matchit_out$data, is.numeric))])
 
-    data_numeric <- output$data %>%
+    data_numeric <- matchit_out$data %>%
       dplyr::select(all_of(c(dependent, strata)), distance) %>%
       dplyr::select_at(vars(any_of(var_numeric[which(! var_numeric %in% strata)]), strata, distance))
 

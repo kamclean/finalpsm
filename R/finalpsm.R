@@ -5,6 +5,7 @@
 #' @param matchit_out Output from the finalpsm::matchit() function.
 #' @param dependent Character vector of length 1: quoted name of dependent variable. Can be continuous, a binary factor, or a survival object of form Surv(time, status).
 #' @param explanatory Character vector of any length: quoted name(s) of explanatory variables (default = NULL - the strata and explanatory variables from the matchit_out object will be used)
+#' @param subclass Logical value whether subclass should be included as a random-effect (if this form of matching is used).
 #' @param balance Logical value whether a balance table should be supplied in the output (default = T).
 #' @param metrics Logical value whether the model metrics should be supplied in the output (default = T).
 #' @param fit Logical value whether the model fit object should be supplied in the output (default = T).
@@ -19,12 +20,14 @@
 #' @export
 
 
-finalpsm <- function(matchit_out, dependent, explanatory = NULL, balance = T, metrics = T, fit = T){
+finalpsm <- function(matchit_out, dependent, explanatory = NULL, subclass = T, balance = T, metrics = T, fit = T){
   require(dplyr);require(stringr);require(finalfit);require(tibble)
   require(tidyr);require(lme4);require(purrr)
 
   # Extract from  matchit_out---------------------------
-  data <- matchit_out$data # Get matched dataset
+  data <- matchit_out$data %>% # Get matched dataset
+    dplyr::mutate_at(vars(matches("subclass")), factor)
+
   object <- matchit_out$object # Get matchit object
 
   formula_text <- summary(object)[[1]]$formula %>% deparse() %>%
@@ -118,12 +121,21 @@ finalpsm <- function(matchit_out, dependent, explanatory = NULL, balance = T, me
 
   if(type == "logistic"){
 
-      formula = as.formula(finalfit::ff_formula(dependent= dependent, explanatory =  explanatory))
+      formula = as.formula(finalfit::ff_formula(dependent= dependent,
+                                                explanatory =  explanatory,
+                                                random_effect = if("subclass" %in% names(data)&subclass==T){"subclass"}else{NULL}))
 
+      if(subclass==F){
       model_fit <- suppressWarnings(eval(bquote(glm(formula = .(formula),
                                                     data = data,
                                                     weights = data$weights,
-                                                    family  = "binomial"))))
+                                                    family  = "binomial"))))}
+
+      if(subclass==T){
+        model_fit <- suppressWarnings(eval(bquote(lme4::glmer(formula = .(formula),
+                                                              data = data,
+                                                              weights = data$weights,
+                                                              family  = "binomial"))))}
 
       model_metric = NULL; if(metrics == TRUE){model_metric <- finalfit::ff_metrics(model_fit)}
 
@@ -135,10 +147,13 @@ finalpsm <- function(matchit_out, dependent, explanatory = NULL, balance = T, me
 
       model_table <- data %>%
         finalfit::finalfit(dependent= dependent,
-                           explanatory =  explanatory, keep_fit_id = T) %>%
+                           explanatory =  explanatory,
+                           random_effect = if("subclass" %in% names(data)&random_effect==T){"subclass"}else{NULL},
+                           keep_fit_id = T) %>%
         tibble::as_tibble() %>%
         dplyr::rename_at(vars(contains("Dependent:")), function(x){x="label"}) %>%
-        dplyr::rename(level = ` `, "or_uni" = `OR (univariable)`, "or_multi" = `OR (multivariable)`) %>%
+        dplyr::rename_at(vars(contains("OR (multi")), function(x){x="or_multi"}) %>%
+        dplyr::rename(level = ` `, "or_uni" = `OR (univariable)`) %>%
         dplyr::left_join(psm, by = "fit_id") %>%
         dplyr::select(-fit_id, -index) %>%
         dplyr::mutate_at(vars(starts_with("or_")), function(x){ifelse(x=="-", NA, x)}) %>%
@@ -146,6 +161,7 @@ finalpsm <- function(matchit_out, dependent, explanatory = NULL, balance = T, me
         tidyr::fill(label, .direction = "down") %>%
         tidyr::pivot_longer(cols = starts_with("or_")) %>%
         dplyr::mutate(value = stringr::str_remove_all(value, "\\)|p=|p<")) %>%
+        dplyr::mutate(value = stringr::str_remove_all(value, "p")) %>%
         dplyr::mutate(or = paste0(stringr::str_split_fixed(value, ", ", 2)[,1], ")"),
                       p = stringr::str_split_fixed(value, ", ", 2)[,2]) %>%
         dplyr::mutate(or = ifelse(or==")", "-", or),
