@@ -1,11 +1,25 @@
 Package: finalpsm
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Propensity-score matching with tidyverse and finalfit
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
+Author: "Kenneth McLean <k.a.mclean@ed.ac.uk> [aut, cre]"
+Description: Propensity-score matching with tidyverse and finalfit
+Imports: dplyr,
+  Hmisc,
+  MatchIt,
+  finalfit,
+  ggplot2,
+  lme4,
+  magrittr,
+  purrr,
+  scales,
+  stddiff,
+  stringr,
+  tibble,
+  tidyr,
+  tidyselect,
+  stringr,
+  zoo
 License: What license is it under?
 Encoding: UTF-8
 LazyData: true

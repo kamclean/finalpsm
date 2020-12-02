@@ -1,0 +1,202 @@
+---
+title: ""
+output: md_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=F, warning=F)
+
+library(dplyr); library(tibble); library(finalpsm); library(patchwork)
+
+```
+
+# Propensity-score Matching (PSM) with the finalpsm package
+
+## Create the matching dataset
+
+Firstly we should ensure all variables of interest are in the correct formats for subsequent propensity-score matching. Variables should either be factors or numerical as appropriate.
+
+We will be using the `survival::colon` dataset as the basis of our example. 
+
+```{r generate_data, echo = T}
+
+data <- tibble::as_tibble(survival::colon) %>%
+  
+  dplyr::filter(etype==2) %>% # Outcome of interest is death
+  dplyr::filter(rx!="Obs") %>%  # rx will be our binary treatment variable
+  dplyr::select(-etype,-study, -status) %>% # Remove superfluous variables
+  
+  # Convert into numeric and factor variables
+  dplyr::mutate_at(vars(obstruct, perfor, adhere, node4), function(x){factor(x, levels=c(0,1), labels = c("No", "Yes"))}) %>%
+  dplyr::mutate(rx = factor(rx),
+                mort365 = cut(time, breaks = c(-Inf, 365, Inf), labels = c("Yes", "No")),
+                sex = factor(sex, levels=c(0,1), labels = c("Female", "Male")),
+                differ = factor(differ, levels = c(1,2,3), labels = c("Well", "Moderate", "Poor")),
+                extent = factor(extent, levels = c(1,2,3, 4), labels = c("Submucosa", "Muscle", "Serosa", "Contiguous Structures")),
+                surg = factor(surg, levels = c(0,1), labels = c("Short", "Long")))
+
+knitr::kable(head(data, 10))
+
+```
+&nbsp;
+&nbsp;
+
+## Propensity-score matching with matchit
+
+With the data pre-processed, we can use the finalpsm `matchit()` function to create the PSM dataset. This is essentially a wrapper function to the MatchIt `matchit()` function - one of the most widely used packages for PSM within R. However, the finalpsm `matchit()` addresses what are felt to be several key issues: 
+
+ * Issue: The `MatchIt::matchit()` does not easily fit into a tidyverse workflow.
+ 
+  - Solution: Inspired by the tidyverse and finalfit, the `matchit()` function facilitates a modulator approach to building formulae.
+
+&nbsp;
+
+ * Problem: The `MatchIt::matchit()` will not run if there is missing data present in the strata or explanatory variables.
+ 
+  - Solution: The `matchit()` function performs pairwise deletion *only* on those the strata or explanatory variables 
+
+&nbsp;
+
+ * Problem: The `MatchIt::matchit()` will not run if the `strata` variable is not a numeric binary variable (0 or 1).
+ 
+  - Solution: The `matchit()` function handles the `strata` variable internally to allow either a factor or numeric variable to be used. The lowest value or first level will be designed the control (0), and the highest value or second level will be designated the treatment (1).
+
+&nbsp;
+&nbsp;
+
+There are 4 types of variables that can be specified in the `finalpsm::matchit` function:
+
+ - `strata` - The binary treatment variable
+ 
+ - `explanatory` - All variables that are desired to be used to generate the propensity-score.
+ 
+  - `id` - An optional variable that allows any number of columns that provide a method of identifying the patient to be retained (e.g. the record or hospital id for each patient). This is **not** used in the propensity-score matching process. 
+  
+  - `dependent`- An optional variable that allows any number of columns that contain the desired outcome(s) of the patient that will be used within the subsequent modeling. This is **not** used in the propensity-score matching process.
+
+All other inputs to the `MatchIt::matchit()` are accepted (see [MatchIt documentation](https://cran.r-project.org/web/packages/MatchIt/MatchIt.pdf)) with the default method of matching being full matching. 
+
+&nbsp;
+
+```{r matchit, echo=FALSE}
+output <- data %>%
+  finalpsm::matchit(strata = "rx",
+                    explanatory = c("age","sex", "obstruct", "differ", "surg"),
+                    id = "id",
+                    dependent = c("mort365", "time"),
+                    method = "full")
+```
+
+&nbsp;
+
+The outputs from the `finalpsm::matchit()` function include:
+
+ - 1. `object`: This can be used as like any `MatchIt::matchit()` output and so facilitates its use within existing scripts (although this function is designed with the intention to be used with subsequently described functions).
+ 
+```{r matchit_object}
+output$object
+```
+
+ - 2. `data`: This is the final matched dataset. However, this is not just the output from `MatchIt::match.data()` applied to the `MatchIt::matchit()` object, but also all specified variables under the `dependent` or `id` parameters. Unspecified variables are removed.
+ 
+ - **Note**: *If the `keep_all` argument is set to TRUE, this retains all columns in the original dataset (and so removes the need for specifying dependent or id variables)*.
+ 
+```{r matchit_data, echo=T}
+head(output$data, 10) %>% knitr::kable()
+```
+
+&nbsp;
+
+ There are 3 additional columns appended to the dataset following propensity-score matching:
+ 
+ - `distance`: This is the propensity-score generated for that record. This is the probability of that patient being in the treatment group (`strata`), given the covariates supplied (`explanatory`).
+
+ - `weights`: This is the weighting provided to each patient within the matching procedure (particularly relevant in full matching). As stated by the MatchIt authors ([Ho et al.](https://r.iq.harvard.edu/docs/matchit/2.4-20/matchit.pdf)): "*If one chooses options that allow matching with replacement, or any solution that has different numbers of controls (or treateds) within each subclass or strata (such as full matching), then the parametric analysis following matching must accomodate these procedures*". As such, the `weights` column is used within subsequent modeling to ensure that the dataset remains balanced on the key variables. 
+
+ - `subclass`: This is which subclass (aka block) the patient has been divided into based on their propensity score. Within each of the subclasses the propensity score is, at least approximately, constant. This is only present with full or sub-classification propensity score matching.
+ 
+&nbsp;
+&nbsp;
+
+## Assessment of Balance
+
+So we have gone to the effort of matching the sample to allow inference. However, before we start using the matched dataset generated, we should ensure that the PSM process has achieved its goal of creating a balanced sample on our observed variables (as that is a key determinant of the validity of any conclusions based on this data).
+
+This can be achieved in 2 ways: both visual and quantitative methods of assessing balance.
+
+&nbsp;
+
+### Balance Visualisation
+
+There are several ways to visualise balance after PSM, which broadly fall into 2 categories: overall assessment and individual covariate assessment (`explanatory`). 
+
+The `balance_plot()` function provides the capability to easily generate several ggplots to allow quick assessment.
+
+ - All plots only require the object produced by `matchit`.
+
+ - All plots produced are relatively plain, but can be aesthetically modified further via ggplot2 functions.
+
+&nbsp;
+
+#### 1. Overall balance between treatment groups
+
+This can be visualised as a density or jitter plot to allow comparison of the overall distribution of propensity-scores between the treatment groups.
+
+```{r balance_plot1, fig.width= 10, fig.height=8}
+
+finalpsm::balance_plot(output, type = "density") / finalpsm::balance_plot(output, type = "jitter")
+
+```
+
+Well balanced groups should follow approximately the same pattern (as in this case).
+
+&nbsp;
+
+#### 2. Covariate balance between treatment groups
+
+This can be visualised as a geom_point plot with a line of best fit to allow comparison of the distribution of propensity-scores between treatment groups for the different covariates (`explanatory` variables).
+
+```{r balance_plot2, fig.width=10, fig.height=10}
+# https://sejdemyr.github.io/r-tutorials/statistics/tutorial8.html
+covariate <- finalpsm::balance_plot(output, type = "covariate")
+
+covariate$factor / covariate$numeric
+```
+
+Well balanced groups should follow approximately the same pattern (as in this case). 
+
+
+This can also be visualized as a [Love plot](https://www.lexjansen.com/pharmasug/2007/pr/PR02.pdf) graphically displaying covariate balance before and after adjusting.
+
+ - An absolute SMD of 0 is complete balance. This plot requires a decision regarding the threshold of what is considered "balanced" within the dataset (e.g. the accepted standardised mean difference (SMD) between the treatment and control groups for each variable). The default is an absolute SMD of 0.2, below which the variables are considered well balanced.
+
+ - The arrow starts at the unmatched absolute SMD for that variable, and points to the absolute SMD following propensity score matching.
+
+```{r balance_plot3, fig.width=10, fig.height=4}
+# https://sejdemyr.github.io/r-tutorials/statistics/tutorial8.html
+finalpsm::balance_plot(output, type = "love", threshold = 0.2)
+```
+
+From the Love plot here, we can see that while some variables have become less balanced as a result of the propensity score matching process, these remain overall within our stated threshold of "good" balance (0.2). The unbalanced variable (sex) has seen a substantial improvement in balance as a result of the PSM process.
+
+&nbsp;
+
+#### Balance Table
+
+However, people usually like some objective numbers thrown in (even if it's sometimes about as arbitrary as squinting at a plot).
+
+There are several packages out there that include some measure of formal quantification of the balance in a PSM sample ("balance tables"), `MatchIt` included. However, these tend to be poorly formatted for readability, comparison and publication.
+
+The [`cobalt` package](https://cran.r-project.org/web/packages/cobalt/vignettes/cobalt_A0_basic_use.html) is far more sophisticated regarding assessment of balance than `finalpsm`, however does not work well within the intended `tidyverse` / `finalfit` workflow to produce tables formatted for publication.
+
+
+```{r balance_table}
+finalpsm::balance_table(output, threshold = 0.2) %>% knitr::kable()
+```
+
+As you can see with the `unm_balance` and `mat_balance` columns, the sample is already relatively well balanced in the "unmatched" sample (`unm_`) with in imbalance in the sex variable (more females in the treated group). However, in the propensity-score matched sample, a much improved balance has been achieved across all variables (all now below the a priori absolute standardised mean difference of 0.2).
+
+ - **Note**: *There is recognise concerns regarding the use of significant tests to determine differences in treatment groups as a method of assessing balance with propensity score matching  [Imai et al. (2008)](https://doi.org/10.1111/j.1467-985X.2007.00527.x). As such, this is not automatically provided, but can be included if desired if `p=TRUE` argument is added*.
+
+&nbsp;
+&nbsp;
