@@ -19,7 +19,6 @@
 #' @importFrom stddiff stddiff.category stddiff.numeric
 #' @export
 
-
 balance_table <- function(matchit_out, threshold = 0.2, p=FALSE){
   require(dplyr); require(tidyr); require(purrr); require(tibble);
   require(magrittr); require(MatchIt); require(stringr);require(tidyselect)
