@@ -1,0 +1,92 @@
+---
+title: "vignette_match"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F)
+library(dplyr); library(tibble); library(survival)
+
+```
+
+```{r, include=FALSE}
+data <- tibble::as_tibble(survival::colon) %>%
+  
+  dplyr::filter(etype==2) %>% # Outcome of interest is death
+  dplyr::filter(rx!="Obs") %>%  # rx will be our binary treatment variable
+  dplyr::select(-etype,-study, -status) %>% # Remove superfluous variables
+  
+  # Convert into numeric and factor variables
+  dplyr::mutate_at(vars(obstruct, perfor, adhere, node4), function(x){factor(x, levels=c(0,1), labels = c("No", "Yes"))}) %>%
+  dplyr::mutate(rx = factor(rx),
+                mort365 = cut(time, breaks = c(-Inf, 365, Inf), labels = c("Yes", "No")),
+                sex = factor(sex, levels=c(0,1), labels = c("Female", "Male")),
+                differ = factor(differ, levels = c(1,2,3), labels = c("Well", "Moderate", "Poor")),
+                extent = factor(extent, levels = c(1,2,3, 4), labels = c("Submucosa", "Muscle", "Serosa", "Contiguous Structures")),
+                surg = factor(surg, levels = c(0,1), labels = c("Short", "Long")))
+
+
+```
+
+## Overview
+`finalpsm` is designed not just to make the process of propensity-score matching itself easier, but also the process of modeling with the matched dataset. This aims to act as an extention to the `finalfit` package to create final results tables
+
+
+
+Risk adjustment was subsequently undertaken using multivariable binary logistic regression models (based on the variables used to generate the propensity score) to allow doubly robust estimation
+
+Funk MJ, Westreich D, Wiesen C, Stürmer T, Brookhart
+MA, Davidian M. Doubly robust estimation of causal effects.
+Am J Epidemiol 2011; 173: 761–767.
+
+This does not include mixed-effects models given the propensity-score matching would be assumed to trump ...
+
+Each has the same output structure:
+1. "balance" = 
+2. "fit" The 
+3. "table" = The finalfit table for the psm analysis
+4. "metric" The finalfit metrics for the psm analysis.
+5. ? plot??????????????????
+
+All the usual assumptions should still be investigated as appropriate. 
+
+
+
+## Binary Logistic Regression
+
+
+```{r cars}
+data %>%
+  finalpsm::match(strata = "rx",
+                    explanatory = c("age","sex", "obstruct", "differ", "surg"),
+                    id = "id",
+                    dependent = c("mort365", "time", "status"),
+                    method = "full") %>%
+  finalpsm::finalpsm(dependent = "mort365")
+```
+
+## Cox-Proportional Hazards
+
+```{r survival}
+data %>%
+  finalpsm::match(strata = "rx",
+                    explanatory = c("age","sex", "obstruct", "differ", "surg"),
+                    id = "id",
+                    dependent = c("mort365", "time", "status"),
+                    method = "full") %>%
+  finalpsm::finalpsm(dependent = "survival::Surv(time, status)")
+```
+
+
+## Linear Regression
+
+
+```{r linear}
+data %>%
+  finalpsm::match(strata = "rx",
+                    explanatory = c("age","sex", "obstruct", "differ", "surg"),
+                    id = "id",
+                    dependent = c("mort365", "time", "status"),
+                    method = "full") %>%
+  finalpsm::finalpsm(dependent = "survival::Surv(time, status)")
+```

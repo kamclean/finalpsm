@@ -53,7 +53,7 @@ balance_table <- function(matchit_out, threshold = 0.2, p=FALSE){
       dplyr::group_split(strata_01) %>%
       purrr::map_df(function(x){x %>%
           dplyr::group_by(strata_01) %>%
-          dplyr::summarise_at(vars(all_of(var_numeric), weights), function(x){list(x)}) %>%
+          dplyr::summarise(across(c(all_of(var_numeric), weights), function(x){list(x)}), .groups = "drop") %>%
           tidyr::pivot_longer(cols= - c("weights","strata_01"), names_to = "label", values_to = "data") %>%
           dplyr::select(strata_01, label, data, weights) %>%
           tidyr::unnest(cols = c(data, weights)) %>%
@@ -63,14 +63,14 @@ balance_table <- function(matchit_out, threshold = 0.2, p=FALSE){
     test_num <- data_num %>%
       dplyr::group_by(label) %>%
       dplyr::summarise(unm_p = t.test(data ~ strata_01) %>% broom::tidy() %>% pull(p.value),
-                       mat_p = t.test(data_weighted ~ strata_01) %>% broom::tidy() %>% pull(p.value))
+                       mat_p = t.test(data_weighted ~ strata_01) %>% broom::tidy() %>% pull(p.value), .groups = "drop")
 
     smd_num <- data_num %>%
       dplyr::group_by(label) %>%
       dplyr::summarise(unm_smd = stddiff::stddiff.numeric(as.data.frame(.), gcol = "strata_01", vcol = "data") %>%
                          tibble::as_tibble() %>% dplyr::pull(stddiff),
                        mat_smd = stddiff::stddiff.numeric(as.data.frame(.), gcol = "strata_01", vcol = "data_weighted") %>%
-                         tibble::as_tibble() %>% dplyr::pull(stddiff))
+                         tibble::as_tibble() %>% dplyr::pull(stddiff), .groups = "drop")
 
     sum_num <- data_num %>%
       dplyr::group_by(strata_01, label) %>%
@@ -78,7 +78,7 @@ balance_table <- function(matchit_out, threshold = 0.2, p=FALSE){
       dplyr::summarise(unm_mean = mean(data, na.rm=T),
                        unm_sd = sd(data, na.rm=T),
                        mat_mean = Hmisc::wtd.mean(data, weights),
-                       mat_sd = sqrt(Hmisc::wtd.var(data, weights))) %>%
+                       mat_sd = sqrt(Hmisc::wtd.var(data, weights)), .groups = "drop") %>%
       dplyr::filter(! label %in% c(strata_binary, strata, "strata_01")) %>%
       dplyr::mutate_at(vars(-label, -strata_01), function(x){signif(as.numeric(x), digits=3)}) %>%
       dplyr::mutate(unm = paste0(unm_mean, " (", unm_sd, ")"),
@@ -113,14 +113,14 @@ balance_table <- function(matchit_out, threshold = 0.2, p=FALSE){
     dplyr::group_split(strata_01) %>%
     purrr::map_df(function(x){x %>%
         dplyr::group_by(strata_01) %>%
-        dplyr::summarise_at(vars(all_of(var_factor), weights), function(x){list(x)}) %>%
+        dplyr::summarise(across(c(all_of(var_factor), weights), function(x){list(x)}), .groups = "drop") %>%
         tidyr::pivot_longer(cols= -all_of(c("weights", "strata_01")), names_to = "label", values_to = "data") %>%
         dplyr::select(strata_01, label, data, weights) %>%
         tidyr::unnest(cols = everything()) %>%
         dplyr::group_by(strata_01, label, data) %>%
-        dplyr::summarise(n_unm = n(),
-                         n_mat = sum(weights, na.rm = T) %>% round())}) %>%
-    dplyr::ungroup()
+        dplyr::summarise(.groups = "drop",
+                         n_unm = n(),
+                         n_mat = sum(weights, na.rm = T) %>% round())})
 
   data_fac <- sum_fac %>%
     dplyr::group_by(strata_01, label,data ) %>%
