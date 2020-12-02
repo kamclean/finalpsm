@@ -634,11 +634,11 @@ allow comparison of the distribution of propensity-scores between
 treatment groups for the different covariates (`explanatory` variables).
 
     # https://sejdemyr.github.io/r-tutorials/statistics/tutorial8.html
-    covariate <- finalpsm::balance_plot(output, type = "covariate")$factor
+    covariate <- finalpsm::balance_plot(output, type = "covariate")
 
     covariate$factor / covariate$numeric
 
-    ## numeric(0)
+![](vignette_1_match_files/figure-markdown_strict/balance_plot2-1.png)
 
 Well balanced groups should follow approximately the same pattern (as in
 this case).

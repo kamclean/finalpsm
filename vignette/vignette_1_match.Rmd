@@ -161,7 +161,7 @@ This can be visualised as a geom_point plot with a line of best fit to allow com
 
 ```{r balance_plot2, fig.width=10, fig.height=10}
 # https://sejdemyr.github.io/r-tutorials/statistics/tutorial8.html
-covariate <- finalpsm::balance_plot(output, type = "covariate")$factor
+covariate <- finalpsm::balance_plot(output, type = "covariate")
 
 covariate$factor / covariate$numeric
 ```
