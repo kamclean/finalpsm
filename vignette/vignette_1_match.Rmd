@@ -33,7 +33,10 @@ data <- tibble::as_tibble(survival::colon) %>%
                 sex = factor(sex, levels=c(0,1), labels = c("Female", "Male")),
                 differ = factor(differ, levels = c(1,2,3), labels = c("Well", "Moderate", "Poor")),
                 extent = factor(extent, levels = c(1,2,3, 4), labels = c("Submucosa", "Muscle", "Serosa", "Contiguous Structures")),
-                surg = factor(surg, levels = c(0,1), labels = c("Short", "Long")))
+                surg = factor(surg, levels = c(0,1), labels = c("Short", "Long"))) %>%
+  
+  # Logical value for outcome (for survival analysis)
+  dplyr::mutate(status = mort365=="Yes")
 
 knitr::kable(head(data, 10))
 
@@ -158,7 +161,7 @@ This can be visualised as a geom_point plot with a line of best fit to allow com
 
 ```{r balance_plot2, fig.width=10, fig.height=10}
 # https://sejdemyr.github.io/r-tutorials/statistics/tutorial8.html
-covariate <- finalpsm::balance_plot(output, type = "covariate")
+covariate <- finalpsm::balance_plot(output, type = "covariate")$factor
 
 covariate$factor / covariate$numeric
 ```

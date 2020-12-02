@@ -22,6 +22,7 @@
 # Function
 matchit <- function(.data, strata, explanatory, id = NULL, dependent = NULL,
                     method = "full",keep_col = F, keep_unmatch = T, ...){
+
   require(tibble);require(dplyr);require(tidyr);require(tidyselect)
   require(finalfit);require(MatchIt)
 
