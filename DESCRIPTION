@@ -3,6 +3,7 @@ Type: Package
 Title: Propensity-score matching with tidyverse and finalfit
 Version: 0.1.0
 Author: "Kenneth McLean <k.a.mclean@ed.ac.uk> [aut, cre]"
+Maintainer: Kenneth McLean <k.a.mclean@ed.ac.uk>
 Description: Propensity-score matching with tidyverse and finalfit
 Imports: dplyr,
   Hmisc,

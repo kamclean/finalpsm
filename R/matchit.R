@@ -15,8 +15,8 @@
 #' @import dplyr
 #' @import tibble
 #' @import tidyr
+#' @import MatchIt
 #' @importFrom finalfit ff_formula
-#' @importFrom MatchIt matchit match.data
 #' @export
 
 # Function
