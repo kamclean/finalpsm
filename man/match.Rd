@@ -13,6 +13,9 @@ match(
   method = "full",
   keep_col = F,
   keep_unmatch = T,
+  caliper = NULL,
+  replace = FALSE,
+  ratio = 1,
   ...
 )
 }
@@ -32,6 +35,12 @@ match(
 \item{keep_col}{Keep all columns within the original dataset (default = FALSE)}
 
 \item{keep_unmatch}{Keep unmatched patients within the output (default = TRUE)}
+
+\item{caliper}{As per MatchIt::matchit. For methods that allow it, the width(s) of the caliper(s) to use in matching. Should be a numeric vector with each value named according to the variable to which the caliper applies. To apply to the distance measure, the value should be unnamed. See the individual methods pages for information on whether and how this argument is used. The default is NULL for no caliper.}
+
+\item{replace}{As per MatchIt::matchit. For methods that allow it, whether matching should be done with replacement (TRUE), where control units are allowed to be matched to several treated units, or without replacement (FALSE), where control units can only be matched to one treated unit each. See the individual methods pages for information on whether and how this argument is used. Default is FALSE for matching without replacement.}
+
+\item{ratio}{As per MatchIt::matchit. For methods that allow it, how many control units should be matched to each treated unit in k:1 matching. Should be a single integer value. See the individual methods pages for information on whether and how this argument is used. The default is 1 for 1:1 matching.}
 
 \item{...}{Additional arguments to be passed to a variety of matching methods.}
 }
