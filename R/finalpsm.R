@@ -54,6 +54,8 @@ finalpsm <- function(matchit_out, dependent, explanatory = NULL, subclass = T, b
     if(dplyr::pull(data, dependent) %>% class()=="numeric"){type = "linear"}}
 
 
+  if("subclass" %in% names(data)){subclass}else{subclass=F}
+
   # Check if coxph model
   out <- NULL
   if(type == "coxph"){
