@@ -25,7 +25,8 @@ finalpsm <- function(matchit_out, dependent, explanatory = NULL, subclass = T, b
 
   # Extract from  matchit_out---------------------------
   data <- matchit_out$data %>% # Get matched dataset
-    dplyr::mutate_at(vars(matches("subclass")), factor)
+    dplyr::mutate_at(vars(matches("subclass")), factor) %>%
+    dplyr::filter(match == "Matched")
 
   object <- matchit_out$object # Get matchit object
 
@@ -123,73 +124,73 @@ finalpsm <- function(matchit_out, dependent, explanatory = NULL, subclass = T, b
 
   if(type == "logistic"){
 
-      formula = as.formula(finalfit::ff_formula(dependent= dependent,
-                                                explanatory =  explanatory,
-                                                random_effect = if("subclass" %in% names(data)&subclass==T){"subclass"}else{NULL}))
+    formula = as.formula(finalfit::ff_formula(dependent= dependent,
+                                              explanatory =  explanatory,
+                                              random_effect = if("subclass" %in% names(data)&subclass==T){"subclass"}else{NULL}))
 
-      if(subclass==F){
-      model_fit <- suppressWarnings(eval(bquote(glm(formula = .(formula),
+    if(subclass==F){
+      model_fit <- suppressWarnings(eval(bquote(glm(formula = formula,
                                                     data = data,
                                                     weights = data$weights,
                                                     family  = "binomial"))))}
 
-      if(subclass==T){
-        model_fit <- suppressWarnings(eval(bquote(lme4::glmer(formula = .(formula),
-                                                              data = data,
-                                                              weights = data$weights,
-                                                              family  = "binomial"))))}
+    if(subclass==T){
+      model_fit <- suppressWarnings(eval(bquote(lme4::glmer(formula = formula,
+                                                            data = data,
+                                                            weights = data$weights,
+                                                            family  = "binomial"))))}
 
-      model_metric = NULL; if(metrics == TRUE){model_metric <- finalfit::ff_metrics(model_fit)}
+    model_metric = NULL; if(metrics == TRUE){model_metric <- finalfit::ff_metrics(model_fit)}
 
 
-      psm <-  suppressWarnings(finalfit::fit2df(model_fit)) %>%
-        tibble::as_tibble() %>%
-        dplyr::rename("fit_id" = explanatory, "or_psm" = OR) %>%
-        dplyr::mutate_all(as.character)
+    psm <-  suppressWarnings(finalfit::fit2df(model_fit)) %>%
+      tibble::as_tibble() %>%
+      dplyr::rename("fit_id" = explanatory, "or_psm" = OR) %>%
+      dplyr::mutate_all(as.character)
 
-      model_table <- data %>%
-        finalfit::finalfit(dependent= dependent,
-                           explanatory =  explanatory,
-                           random_effect = if("subclass" %in% names(data)&subclass==T){"subclass"}else{NULL},
-                           keep_fit_id = T) %>%
-        tibble::as_tibble() %>%
-        dplyr::rename_at(vars(contains("Dependent:")), function(x){x="label"}) %>%
-        dplyr::rename_at(vars(contains("OR (multi")), function(x){x="or_multi"}) %>%
-        dplyr::rename(level = ` `, "or_uni" = `OR (univariable)`) %>%
-        dplyr::left_join(psm, by = "fit_id") %>%
-        dplyr::select(-fit_id, -index) %>%
-        dplyr::mutate_at(vars(starts_with("or_")), function(x){ifelse(x=="-", NA, x)}) %>%
-        dplyr::mutate(label = ifelse(label=="", NA, label)) %>%
-        tidyr::fill(label, .direction = "down") %>%
-        tidyr::pivot_longer(cols = starts_with("or_")) %>%
-        dplyr::mutate(value = stringr::str_remove_all(value, "\\)|p=")) %>%
-        dplyr::mutate(value = stringr::str_remove_all(value, "p")) %>%
-        dplyr::mutate(or = paste0(stringr::str_split_fixed(value, ", ", 2)[,1], ")"),
-                      p = stringr::str_split_fixed(value, ", ", 2)[,2]) %>%
-        dplyr::mutate(or = ifelse(or==")", "-", or),
-                      name = stringr::str_remove(name, "or_")) %>%
-        dplyr::select(-value) %>%
-        tidyr::pivot_wider(names_from = "name", values_from = c("or","p")) %>%
-        dplyr::rename_at(vars(contains("_uni"), contains("_multi"), contains("_psm")),
-                         function(x){paste0(stringr::str_split_fixed(x, "_", 2)[,2],
-                                            "_",
-                                            stringr::str_split_fixed(x, "_", 2)[,1])}) %>%
-        dplyr::select(label, level, levels(pull(data, dependent)),
-                      starts_with("uni_"),starts_with("multi_"),starts_with("psm_")) %>%
+    model_table <- data %>%
+      finalfit::finalfit(dependent= dependent,
+                         explanatory =  explanatory,
+                         random_effect = if("subclass" %in% names(data)&subclass==T){"subclass"}else{NULL},
+                         keep_fit_id = T) %>%
+      tibble::as_tibble() %>%
+      dplyr::rename_at(vars(contains("Dependent:")), function(x){x="label"}) %>%
+      dplyr::rename_at(vars(contains("OR (multi")), function(x){x="or_multi"}) %>%
+      dplyr::rename(level = ` `, "or_uni" = `OR (univariable)`) %>%
+      dplyr::left_join(psm, by = "fit_id") %>%
+      dplyr::select(-fit_id, -index) %>%
+      dplyr::mutate_at(vars(starts_with("or_")), function(x){ifelse(x=="-", NA, x)}) %>%
+      dplyr::mutate(label = ifelse(label=="", NA, label)) %>%
+      tidyr::fill(label, .direction = "down") %>%
+      tidyr::pivot_longer(cols = starts_with("or_")) %>%
+      dplyr::mutate(value = stringr::str_remove_all(value, "\\)|p=")) %>%
+      dplyr::mutate(value = stringr::str_remove_all(value, "p")) %>%
+      dplyr::mutate(or = paste0(stringr::str_split_fixed(value, ", ", 2)[,1], ")"),
+                    p = stringr::str_split_fixed(value, ", ", 2)[,2]) %>%
+      dplyr::mutate(or = ifelse(or==")", "-", or),
+                    name = stringr::str_remove(name, "or_")) %>%
+      dplyr::select(-value) %>%
+      tidyr::pivot_wider(names_from = "name", values_from = c("or","p")) %>%
+      dplyr::rename_at(vars(contains("_uni"), contains("_multi"), contains("_psm")),
+                       function(x){paste0(stringr::str_split_fixed(x, "_", 2)[,2],
+                                          "_",
+                                          stringr::str_split_fixed(x, "_", 2)[,1])}) %>%
+      dplyr::select(label, level, levels(pull(data, dependent)),
+                    starts_with("uni_"),starts_with("multi_"),starts_with("psm_")) %>%
 
-        dplyr::group_by(label) %>%
-        dplyr::mutate(n = 1:n()) %>%
-        dplyr::ungroup() %>%
-        dplyr::mutate(label = ifelse(n>1, "", label)) %>%
-        dplyr::select(-n)
+      dplyr::group_by(label) %>%
+      dplyr::mutate(n = 1:n()) %>%
+      dplyr::ungroup() %>%
+      dplyr::mutate(label = ifelse(n>1, "", label)) %>%
+      dplyr::select(-n)
 
-      out <- list("balance" = if(balance==T){finalpsm::balance_table(matchit_out)}else{NULL},
-                  "fit" = if(fit==T){model_fit}else{NULL},
-                  "table" = model_table,
-                  "metric" = model_metric) %>%
-        purrr::discard(is.null)}
+    out <- list("balance" = if(balance==T){finalpsm::balance_table(matchit_out)}else{NULL},
+                "fit" = if(fit==T){model_fit}else{NULL},
+                "table" = model_table,
+                "metric" = model_metric) %>%
+      purrr::discard(is.null)}
 
- # linear models (including ATC / ATT)
+  # linear models (including ATC / ATT)
   if(type == "linear"){
 
     formula = as.formula(finalfit::ff_formula(dependent= dependent,
