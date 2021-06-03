@@ -16,12 +16,13 @@
 #' @import finalfit
 #' @import stringr
 #' @import lme4
+#' @import survival
 #' @importFrom purrr discard
 #' @export
 
 finalpsm <- function(matchit_out, dependent, explanatory = NULL, subclass = T, balance = T, metrics = T, fit = T){
   require(dplyr);require(stringr);require(finalfit);require(tibble)
-  require(tidyr);require(lme4);require(purrr)
+  require(tidyr);require(lme4);require(purrr); require(survival)
 
   # Extract from  matchit_out---------------------------
   data <- matchit_out$data %>% # Get matched dataset
@@ -80,7 +81,7 @@ finalpsm <- function(matchit_out, dependent, explanatory = NULL, subclass = T, b
     summary <- data %>%
       dplyr::mutate(var_status = pull(., var_status) %>% factor()) %>%
       finalfit::summary_factorlist(dependent = "var_status",  explanatory =  explanatory, fit_id = T) %>%
-      dplyr::select(fit_id, `FALSE`, `TRUE`)
+      dplyr::select(fit_id, any_of(c("FALSE", "TRUE", "0", "1")))
 
     model_table <- data %>%
       finalfit::finalfit.coxph(dependent= dependent,
@@ -107,7 +108,7 @@ finalpsm <- function(matchit_out, dependent, explanatory = NULL, subclass = T, b
                        function(x){paste0(stringr::str_split_fixed(x, "_", 2)[,2],
                                           "_",
                                           stringr::str_split_fixed(x, "_", 2)[,1])}) %>%
-      dplyr::select(label, level, `FALSE`, `TRUE`,
+      dplyr::select(label, level, any_of(c("FALSE", "TRUE", "0", "1")),
                     contains("uni_"),contains("multi_"),contains("psm_")) %>%
       dplyr::rename_at(vars(starts_with("hr_")), function(x){stringr::str_remove(x, pattern = "hr_")}) %>%
 
