@@ -16,13 +16,14 @@
 #' @import finalfit
 #' @import stringr
 #' @import lme4
+#' @import coxme
 #' @import survival
 #' @importFrom purrr discard
 #' @export
 
 finalpsm <- function(matchit_out, dependent, explanatory = NULL, subclass = T, balance = T, metrics = T, fit = T){
   require(dplyr);require(stringr);require(finalfit);require(tibble)
-  require(tidyr);require(lme4);require(purrr); require(survival)
+  require(tidyr);require(lme4);require(purrr); require(survival); require(coxme)
 
   # Extract from  matchit_out---------------------------
   data <- matchit_out$data %>% # Get matched dataset
@@ -61,15 +62,25 @@ finalpsm <- function(matchit_out, dependent, explanatory = NULL, subclass = T, b
   # Check if coxph model
   out <- NULL
   if(type == "coxph"){
+    formula = as.formula(finalfit::ff_formula(dependent= dependent,
+                                              explanatory =  explanatory,
+                                              random_effect = if("subclass" %in% names(data)&subclass==T){"subclass"}else{NULL}))
 
-    formula = as.formula(finalfit::ff_formula(dependent= dependent, explanatory =  explanatory))
+    model_metric = NULL
+    if(subclass==F){
+      model_fit <- suppressWarnings(eval(bquote(survival::coxph(formula = .(formula),
+                                                                data = data,
+                                                                weights = data$weights))))
+
+      if(metrics == TRUE){model_metric <- finalfit::ff_metrics(model_fit)}}
 
 
-    model_fit <- suppressWarnings(eval(bquote(survival::coxph(formula = .(formula),
-                                                              data = data,
-                                                              weights = data$weights))))
-    model_metric = NULL; if(metrics == TRUE){model_metric <- finalfit::ff_metrics(model_fit)}
+    if(subclass==T){
+      model_fit <- suppressWarnings(eval(bquote(coxme::coxme(formula = .(formula),
+                                                             data = data,
+                                                             weights = data$weights))))
 
+      if(metrics == TRUE){model_metric <- NULL}}
 
     psm <-  suppressWarnings(finalfit::fit2df(model_fit)) %>%
       tibble::as_tibble() %>%
