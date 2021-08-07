@@ -1,0 +1,61 @@
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+# Propensity-score matching
+
+Preprocessing data through matching, weighting, or subclassification can
+be an effective way to reduce model dependence and improve efficiency
+when estimating the causal effect of a treatment (Ho, Imai, King, &
+Stuart, 2007). Propensity scores and other related methods (e.g.,
+coarsened exact matching, Mahalanobis distance matching, genetic
+matching) have become popular in the social and health sciences as tools
+for this purpose. Two excellent introductions to propensity scores and
+other preprocessing methods are Stuart (2010) and Austin (2011), which
+describe them simply and clearly and point to other sources of
+knowledge.
+
+The logic and theory behind preprocessing will not be discussed here,
+and reader’s knowledge of the causal assumption of strong ignorability
+is assumed.
+
+# finalpsm
+
+The goal of finalpsm is to …
+
+The `finalpsm` package assumes the user has sufficient understanding of
+the theory and validity surrounding the use of propensity-score matching
+for causal inference.
+
+The output the propensity-score matching
+
+Several packages in R exist to perform preprocessing and causal effect
+estimation, and some were reviewed by Keller & Tipton (2016). Of primary
+note are MatchIt (Ho, Imai, King, & Stuart, 2011), twang (Ridgeway,
+McCaffrey, Morral, Burgette, & Griffin, 2020), Matching (Sekhon, 2011),
+optmatch (Hansen & Klopfer, 2006), CBPS (Fong, Ratkovic, Hazlett, Yang,
+& Imai, 2019), ebal (Hainmueller, 2014), sbw (Zubizarreta & Li, 2019),
+designmatch (Zubizarreta, Kilcioglu, & Vielma, 2018), WeightIt (Greifer,
+2020), MatchThem (Pishgar & Greifer, 2020), and cem (Iacus, King, &
+Porro, 2018); these together provide a near complete set of
+preprocessing tools in R to date.
+
+Propensity score matching was used to reduce likely selection bias and
+balance variables between patients who were, or were not exposed to
+intravenous CT contrast. The propensity score was defined as the
+probability that a patient would be assigned to a particular group
+(contrast exposure or no exposure) based on the explanatory variables in
+the model. Patients who had incomplete data for explanatory variables
+required for matching were excluded from the analysis
+
+## Installation
+
+You can install from [GitHub](https://github.com/) with:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("kamclean/finalpsm")
+```
+
+And the development version from
+
+# Purpose
