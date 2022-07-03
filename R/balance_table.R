@@ -11,12 +11,12 @@
 #' @import tibble
 #' @import purrr
 #' @import tidyselect
+#' @import stddiff
 #' @importFrom MatchIt match.data
 #' @importFrom stringr str_split
 #' @importFrom Hmisc wtd.mean wtd.var
 #' @importFrom scales percent
 #' @importFrom zoo na.locf
-#' @importFrom stddiff stddiff.category stddiff.numeric
 #' @export
 
 balance_table <- function(matchit_out, threshold = 0.2, p=FALSE){
