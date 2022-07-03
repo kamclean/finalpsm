@@ -1,0 +1,103 @@
+---
+title: Multiple Imputation with the finalpsm package
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=F, warning=F)
+```
+
+## Create the dataset
+
+Firstly we should ensure all variables of interest are in the correct formats we need. Variables should either be factors or numerical as appropriate. We will be using the `survival::colon` dataset as the basis of our example. 
+
+```{r generate_data, echo = T}
+library(tidyverse); library(mice)
+
+data <- tibble::as_tibble(survival::colon) %>%
+  
+  dplyr::filter(etype==2) %>% # Outcome of interest is death
+  dplyr::filter(rx!="Obs") %>%  # rx will be our binary treatment variable
+  dplyr::select(-etype,-study, -status) %>% # Remove superfluous variables
+  
+  # Convert into numeric and factor variables
+  dplyr::mutate_at(vars(obstruct, perfor, adhere, node4), function(x){factor(x, levels=c(0,1), labels = c("No", "Yes"))}) %>%
+  dplyr::mutate(rx = factor(rx),
+                mort365 = cut(time, breaks = c(-Inf, 365, Inf), labels = c("Yes", "No")),
+                sex = factor(sex, levels=c(0,1), labels = c("Female", "Male")),
+                differ = factor(differ, levels = c(1,2,3), labels = c("Well", "Moderate", "Poor")),
+                extent = factor(extent, levels = c(1,2,3, 4), labels = c("Submucosa", "Muscle", "Serosa", "Contiguous Structures")),
+                surg = factor(surg, levels = c(0,1), labels = c("Short", "Long"))) %>%
+  
+  # Logical value for outcome (for survival analysis)
+  dplyr::mutate(status = mort365=="Yes")
+
+```
+
+## Explore missing data
+
+Before considering imputation, we first need to determine if there is missing data, and whether the data is missing at random (MAR) or missing not at random data (MNAR). In general, imputation cannot be used when data is MNAR (e.g. there is clear bias in what data is missing).
+
+There are excellent outlines of how to explore and determine this using the `finalfit` package already <a href="https://finalfit.org/articles/missing.html" target="_blank">here</a>. We will assume this has been done, and the data is MAR.
+
+## Imputation
+
+Firstly, we want to remove variables we want to ensure the multiple imputation algorithm is based on the appropriate variables. You should define:
+ 
+ - `impute` (**Essential**): The variables you want to be imputed. There is signifcant debate whether outcomes should be imputed or not, however outcome is often imputed as best practice as shown below.
+
+ - `fixed` (**Optional**): Any variables you want to be present in the dataset AND to be used in the imputation algorithm, BUT to remain unimputed.
+
+ - `ignore` (**Optional**): Any variables you want to be present in the dataset, but to NOT include in the algorithm AND remain unimputed. 
+ 
+
+All other arguments from the `mice::mice()` function can be used to customise imputation. For example, the number of imputations to be performed (`m`).
+
+```{r, results = 'hide'}
+source("~/finalpsm/R/impute.R")
+
+var_dep = "mort365"
+var_exp = c("rx", "sex", "age", "obstruct", "nodes",  "surg")
+var_fixed = c("perfor")
+var_ignore = c("adhere")
+
+impdata <- data %>%
+  impute(impute = c(var_dep, var_exp), fixed = var_fixed, ignore = var_ignore, m=5)
+```
+
+A long dataset is returned containing the original (unimputed) data, with each imputed dataset appended below. Each dataset has a unique number corresponding to it (`m`) and the respective patient (`rowid`).
+
+```{r}
+head(impdata, 5)
+```
+
+## Modelling
+
+The `finalaux::finalimp()` function works functionally the same as the `finalfit::finalfit()` function. The dependent, explanatory, and random_effect variables can be defined, and the appropriate model is chosen based on these.
+
+```{r}
+source("~/finalpsm/R/finalimp.R")
+output <- impdata %>%
+  finalimp(dependent = var_dep, explanatory = var_exp, random_effect = NULL)
+```
+There are 2 outputs:
+
+  1. `$table` which provides a finalfit table ready for output which contains both the unimputed and imputed models.
+  
+```{r, echo = F}
+knitr::kable(output$table)
+```
+  
+  
+
+  2. `$model` which provides all the underlying data, models, and metrics for the original and imputed datasets.
+  
+  - All datasets have an extra column added (`predict`) containing the predicted probability (0-1) of the outcome (based on the model).
+
+```{r, echo=F}
+output$model %>%
+  dplyr::mutate(data = "tibble",
+                model = "S3:glm") %>%
+knitr::kable()
+```
+

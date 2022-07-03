@@ -116,7 +116,7 @@ head(output$data, 10) %>% knitr::kable()
 
  - `weights`: This is the weighting provided to each patient within the matching procedure (particularly relevant in full matching). As stated by the MatchIt authors ([Ho et al.](https://r.iq.harvard.edu/docs/matchit/2.4-20/matchit.pdf)): "*If one chooses options that allow matching with replacement, or any solution that has different numbers of controls (or treateds) within each subclass or strata (such as full matching), then the parametric analysis following matching must accomodate these procedures*". As such, the `weights` column is used within subsequent modeling to ensure that the dataset remains balanced on the key variables. 
 
- - `subclass`: This is which subclass (aka block) the patient has been divided into based on their propensity score. Within each of the subclasses the propensity score is, at least approximately, constant. This is only present with full or sub-classification propensity score matching.
+ - `subclass`: This is which subclass (aka matched cases and controls) the patient has been divided into based on their propensity score. Within each of the subclasses the propensity score is, at least approximately, constant.
  
 &nbsp;
 &nbsp;
