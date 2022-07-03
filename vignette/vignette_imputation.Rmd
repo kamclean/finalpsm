@@ -62,7 +62,7 @@ var_fixed = c("perfor")
 var_ignore = c("adhere")
 
 impdata <- data %>%
-  impute(impute = c(var_dep, var_exp), fixed = var_fixed, ignore = var_ignore, m=5)
+  finalpsm::impute(impute = c(var_dep, var_exp), fixed = var_fixed, ignore = var_ignore, m=5)
 ```
 
 A long dataset is returned containing the original (unimputed) data, with each imputed dataset appended below. Each dataset has a unique number corresponding to it (`m`) and the respective patient (`rowid`).
@@ -78,7 +78,7 @@ The `finalaux::finalimp()` function works functionally the same as the `finalfit
 ```{r}
 source("~/finalpsm/R/finalimp.R")
 output <- impdata %>%
-  finalimp(dependent = var_dep, explanatory = var_exp, random_effect = NULL)
+  finalpsm::finalimp(dependent = var_dep, explanatory = var_exp, random_effect = NULL)
 ```
 There are 2 outputs:
 

@@ -1,7 +1,7 @@
 # finalimp
 # Documentation
 #' Wrapper for performing finalfit modelling using imputed data
-#' @description
+#' @description Wrapper for performing finalfit modelling using imputed data
 #' @param data Output from the impute() function.
 #' @param dependent Character vector of length 1: quoted name of dependent variable. Can be continuous, a binary factor, or a survival object of form Surv(time, status).
 #' @param explanatory Character vector of any length: quoted name(s) of explanatory variables.
