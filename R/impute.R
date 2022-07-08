@@ -52,6 +52,8 @@ impute <- function(data, impute, fixed = NULL, ignore = NULL, quiet = T, m=5, ma
                        dplyr::select(rowid, all_of(fixed), all_of(ignore)) %>%
                        dplyr::slice(rep(1:n(), m+1))) %>%
     dplyr::select(imputed, m, rowid, names(data)) %>%
-    dplyr::arrange(m)
+    dplyr::arrange(m) %>%
+    dplyr::group_by(imputed, m)  %>%
+    tidyr::nest()
 
   return(impdata)}
