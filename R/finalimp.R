@@ -17,35 +17,45 @@
 #' @importFrom mice pool
 #' @export
 
+
+
 finalimp <- function(data, dependent, explanatory,random_effect = NULL){
+
+
+
   unnest <- tidyr::unnest(data, cols= "data")
 
   # Check type of model
-  if(stringr::str_detect(dependent, "Surv\\(")==T){model = "coxph"}
+  if(stringr::str_detect(dependent, "Surv\\(")==T){modeltype = "coxph"}
   if(stringr::str_detect(dependent, "Surv\\(")==F){
-    if(dplyr::pull(unnest, dependent) %>% class()=="factor"){model = "glm"}
-    if(dplyr::pull(unnest, dependent) %>% class()=="numeric"){model = "lm"}}
+    if(dplyr::pull(unnest, dependent) %>% class()=="factor"){modeltype = "glm"}
+    if(dplyr::pull(unnest, dependent) %>% class()=="numeric"){modeltype = "lm"}}
 
-  if(is.null(random_effect)==F){model <- paste0(model, "mixed")}
+  if(is.null(random_effect)==F){modeltype <- paste0(modeltype, "mixed")}
   if(is.null(random_effect)==T){
-    if(length(explanatory)==1){model <- paste0(model, "uni")}
-    if(length(explanatory)>=2){model <- paste0(model, "multi")}}
+    if(length(explanatory)==1){modeltype <- paste0(modeltype, "uni")}
+    if(length(explanatory)>=2){modeltype <- paste0(modeltype, "multi")}}
 
   # formula depends
-  formula <- paste0("finalfit::", model,
+  formula <- paste0("finalfit::", modeltype,
                     "(x, dependent = '", dependent,
                     "',explanatory = ", paste0("c('", paste0(explanatory, collapse = "', '"), "')"),
                     ", random_effect = ", ifelse(is.null(random_effect)==T, "NULL", paste0("'", random_effect, "'")), ")")
 
-  if(stringr::str_detect(model, "mixed")==F){formula <- paste0(stringr::str_split_fixed(formula, ", random_effect = ", 2)[,1], ")")}
+  if(stringr::str_detect(modeltype, "mixed")==F){formula <- paste0(stringr::str_split_fixed(formula, ", random_effect = ", 2)[,1], ")")}
 
 
   impmodel <- data  %>%
-    dplyr::mutate(model = purrr::map(data, function(x){eval(parse(text = formula))}),
-                  metric = purrr::map_chr(model, function(x){suppressMessages(finalfit::ff_metrics(x)[[1]])}),
-                  data = purrr::map(data, function(x){y = eval(parse(text = formula))
+    dplyr::mutate(model = purrr::map(data, function(x){eval(bquote(eval(parse(text = formula))))}),
+                  metric = purrr::map_chr(model, function(x){suppressMessages(finalfit::ff_metrics(x)[[1]])})) %>%
+    dplyr::mutate(data = purrr::map(data,
+                                    function(x){
 
-                  z <-  x %>% dplyr::mutate(predict = predict(y, type = "response", newdata  = x))
+                                      y = eval(parse(text = formula))
+
+                                      if(stringr::str_detect(modeltype, "coxph")){predicttype = "survival"}else{predicttype = "response"}
+
+                                      z <-  x %>% dplyr::mutate(predict = predict(y, type =predicttype, newdata  = x))
                   return(z)})) %>%
     dplyr::ungroup()
 

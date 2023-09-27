@@ -274,42 +274,54 @@ There are 2 outputs:
 <td style="text-align: right;">0</td>
 <td style="text-align: left;">tibble</td>
 <td style="text-align: left;">S3:glm</td>
-<td style="text-align: left;">Number in dataframe = 614, Number in model = 599, Missing = 15, AIC = 354.6, C-statistic = 0.678, H&amp;L = Chi-sq(8) 9.01 (p=0.342)</td>
+<td style="text-align: left;">Number in dataframe = 614, Number in model
+= 599, Missing = 15, AIC = 354.6, C-statistic = 0.678, H&amp;L =
+Chi-sq(8) 9.01 (p=0.342)</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">imputed</td>
 <td style="text-align: right;">1</td>
 <td style="text-align: left;">tibble</td>
 <td style="text-align: left;">S3:glm</td>
-<td style="text-align: left;">Number in dataframe = 614, Number in model = 614, Missing = 0, AIC = 361.1, C-statistic = 0.683, H&amp;L = Chi-sq(8) 4.00 (p=0.858)</td>
+<td style="text-align: left;">Number in dataframe = 614, Number in model
+= 614, Missing = 0, AIC = 361.1, C-statistic = 0.683, H&amp;L =
+Chi-sq(8) 4.00 (p=0.858)</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">imputed</td>
 <td style="text-align: right;">2</td>
 <td style="text-align: left;">tibble</td>
 <td style="text-align: left;">S3:glm</td>
-<td style="text-align: left;">Number in dataframe = 614, Number in model = 614, Missing = 0, AIC = 360.9, C-statistic = 0.684, H&amp;L = Chi-sq(8) 3.52 (p=0.898)</td>
+<td style="text-align: left;">Number in dataframe = 614, Number in model
+= 614, Missing = 0, AIC = 360.9, C-statistic = 0.684, H&amp;L =
+Chi-sq(8) 3.52 (p=0.898)</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">imputed</td>
 <td style="text-align: right;">3</td>
 <td style="text-align: left;">tibble</td>
 <td style="text-align: left;">S3:glm</td>
-<td style="text-align: left;">Number in dataframe = 614, Number in model = 614, Missing = 0, AIC = 360.7, C-statistic = 0.682, H&amp;L = Chi-sq(8) 3.97 (p=0.860)</td>
+<td style="text-align: left;">Number in dataframe = 614, Number in model
+= 614, Missing = 0, AIC = 360.7, C-statistic = 0.682, H&amp;L =
+Chi-sq(8) 3.97 (p=0.860)</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">imputed</td>
 <td style="text-align: right;">4</td>
 <td style="text-align: left;">tibble</td>
 <td style="text-align: left;">S3:glm</td>
-<td style="text-align: left;">Number in dataframe = 614, Number in model = 614, Missing = 0, AIC = 362.6, C-statistic = 0.674, H&amp;L = Chi-sq(8) 2.94 (p=0.938)</td>
+<td style="text-align: left;">Number in dataframe = 614, Number in model
+= 614, Missing = 0, AIC = 362.6, C-statistic = 0.674, H&amp;L =
+Chi-sq(8) 2.94 (p=0.938)</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">imputed</td>
 <td style="text-align: right;">5</td>
 <td style="text-align: left;">tibble</td>
 <td style="text-align: left;">S3:glm</td>
-<td style="text-align: left;">Number in dataframe = 614, Number in model = 614, Missing = 0, AIC = 362.4, C-statistic = 0.674, H&amp;L = Chi-sq(8) 2.65 (p=0.955)</td>
+<td style="text-align: left;">Number in dataframe = 614, Number in model
+= 614, Missing = 0, AIC = 362.4, C-statistic = 0.674, H&amp;L =
+Chi-sq(8) 2.65 (p=0.955)</td>
 </tr>
 </tbody>
 </table>

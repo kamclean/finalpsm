@@ -20,9 +20,26 @@
 #' @importFrom tibble rowid_to_column
 #' @export
 
+
+
 impute <- function(data, impute, fixed = NULL, ignore = NULL, quiet = T, m=5, maxit=5, meth='pmm', seed=500, ...){
 
-  data <- data %>% dplyr::select(all_of(c(impute, fixed, ignore)))
+  impute = c(impute[stringr::str_detect(impute, "Surv\\(")==F],
+             impute[stringr::str_detect(impute, "Surv\\(")] %>%
+               stringr::str_remove_all("Surv\\(|\\)") %>%
+               stringr::str_split(pattern = ",") %>% unlist() %>% stringr::str_trim())
+  fixed = c(fixed[stringr::str_detect(fixed, "Surv\\(")==F],
+            fixed[stringr::str_detect(fixed, "Surv\\(")] %>%
+               stringr::str_remove_all("Surv\\(|\\)") %>%
+               stringr::str_split(pattern = ",") %>% unlist() %>% stringr::str_trim())
+  ignore = c(ignore[stringr::str_detect(ignore, "Surv\\(")==F],
+             ignore[stringr::str_detect(ignore, "Surv\\(")] %>%
+               stringr::str_remove_all("Surv\\(|\\)") %>%
+               stringr::str_split(pattern = ",") %>% unlist() %>% stringr::str_trim())
+
+  variables = c(impute, fixed, ignore)
+
+  data <- data %>% dplyr::select(all_of(c(variables)))
 
   if(quiet==T){
 

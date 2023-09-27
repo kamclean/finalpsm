@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE, message=F, warning=F)
 Firstly we should ensure all variables of interest are in the correct formats we need. Variables should either be factors or numerical as appropriate. We will be using the `survival::colon` dataset as the basis of our example. 
 
 ```{r generate_data, echo = T}
-library(tidyverse); library(finalfit)
+library(tidyverse); library(finalfit); library(survival)
 
 data <- tibble::as_tibble(survival::colon) %>%
   
@@ -45,23 +45,22 @@ There are excellent outlines of how to explore and determine this using the `fin
 
 Firstly, we want to remove variables we want to ensure the multiple imputation algorithm is based on the appropriate variables. You should define:
 
-- `impute` (**Essential**): The variables you want to be imputed. There is signifcant debate whether outcomes should be imputed or not, however outcome is often imputed as best practice as shown below.
+- `impute` (**Essential**): The variables you want to be imputed. There is significant debate whether outcomes should be imputed or not, however outcome is often imputed as best practice as shown below.
 
 - `fixed` (**Optional**): Any variables you want to be present in the dataset AND to be used in the imputation algorithm, BUT to remain unimputed.
 
 - `ignore` (**Optional**): Any variables you want to be present in the dataset, but to NOT include in the algorithm AND remain unimputed. 
 
-
 All other arguments from the `mice::mice()` function can be used to customise imputation. For example, the number of imputations to be performed (`m`).
 
 ```{r, results = 'hide'}
-var_dep = "mort365"
+var_dep = "Surv(time, status)"
 var_exp = c("rx", "sex", "age", "obstruct", "nodes",  "surg")
 var_fixed = c("perfor")
 var_ignore = c("adhere")
 
 impdata <- data %>%
-  finalpsm::impute(impute = c(var_dep, var_exp), fixed = var_fixed, ignore = var_ignore, m=5)
+  impute(impute = c(var_dep, var_exp), fixed = var_fixed, ignore = var_ignore, m=5)
 ```
 
 A nested dataset is returned containing the original (unimputed) data, with each imputed dataset nested (below). Each dataset has a unique number corresponding to it (`m`) and the respective patient (`rowid`). Use `tidyr::unnest()` to convert into a long format.
@@ -76,7 +75,8 @@ The `finalaux::finalimp()` function works functionally the same as the `finalfit
 
 ```{r}
 output <- impdata %>%
-  finalpsm::finalimp(dependent = var_dep, explanatory = var_exp)
+  finalimp(dependent = var_dep, explanatory = var_exp)
+
 ```
 There are 2 outputs:
 
@@ -85,8 +85,6 @@ There are 2 outputs:
 ```{r, echo = F}
 knitr::kable(output$table)
 ```
-
-
 
 2. `$model` which provides all the underlying data, models, and metrics for the original and imputed datasets.
 
