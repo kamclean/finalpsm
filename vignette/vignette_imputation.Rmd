@@ -54,19 +54,20 @@ Firstly, we want to remove variables we want to ensure the multiple imputation a
 All other arguments from the `mice::mice()` function can be used to customise imputation. For example, the number of imputations to be performed (`m`).
 
 ```{r, results = 'hide'}
-var_dep = "Surv(time, status)"
+var_dep = "mort365"
 var_exp = c("rx", "sex", "age", "obstruct", "nodes",  "surg")
 var_fixed = c("perfor")
 var_ignore = c("adhere")
 
 impdata <- data %>%
-  impute(impute = c(var_dep, var_exp), fixed = var_fixed, ignore = var_ignore, m=5)
+  finalpsm::impute(impute = c(var_dep, var_exp), fixed = var_fixed, ignore = var_ignore, m=5)
 ```
 
 A nested dataset is returned containing the original (unimputed) data, with each imputed dataset nested (below). Each dataset has a unique number corresponding to it (`m`) and the respective patient (`rowid`). Use `tidyr::unnest()` to convert into a long format.
 
 ```{r, echo = F}
-impdata %>% mutate(data = "< tibble >") %>% knitr::kable()
+impdata %>%
+  mutate(data = "< tibble >") %>% knitr::kable()
 ```
 
 ## Modelling using finalfit
@@ -75,7 +76,8 @@ The `finalaux::finalimp()` function works functionally the same as the `finalfit
 
 ```{r}
 output <- impdata %>%
-  finalimp(dependent = var_dep, explanatory = var_exp)
+  finalpsm::imputemutate(nodes5 = ifelse(nodes>=5, "Yes", "No")) %>%
+  finalpsm::finalimp(dependent = var_dep, explanatory = c(var_exp, "nodes5"))
 
 ```
 There are 2 outputs:

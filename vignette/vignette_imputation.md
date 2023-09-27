@@ -5,7 +5,7 @@ formats we need. Variables should either be factors or numerical as
 appropriate. We will be using the `survival::colon` dataset as the basis
 of our example.
 
-    library(tidyverse); library(finalfit)
+    library(tidyverse); library(finalfit); library(survival)
 
     data <- tibble::as_tibble(survival::colon) %>%
       
@@ -45,7 +45,7 @@ imputation algorithm is based on the appropriate variables. You should
 define:
 
 -   `impute` (**Essential**): The variables you want to be imputed.
-    There is signifcant debate whether outcomes should be imputed or
+    There is significant debate whether outcomes should be imputed or
     not, however outcome is often imputed as best practice as shown
     below.
 
@@ -123,7 +123,8 @@ random\_effect variables can be defined, and the appropriate model is
 chosen based on these.
 
     output <- impdata %>%
-      finalpsm::finalimp(dependent = var_dep, explanatory = var_exp)
+      finalpsm::imputemutate(nodes5 = ifelse(nodes>=5, "Yes", "No")) %>%
+      finalpsm::finalimp(dependent = var_dep, explanatory = c(var_exp, "nodes5"))
 
 There are 2 outputs:
 
@@ -153,7 +154,7 @@ There are 2 outputs:
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: left;">5</td>
+<td style="text-align: left;">7</td>
 <td style="text-align: left;">rx</td>
 <td style="text-align: left;">Lev</td>
 <td style="text-align: left;">29 (53.7)</td>
@@ -162,16 +163,16 @@ There are 2 outputs:
 <td style="text-align: left;">-</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">6</td>
+<td style="text-align: left;">8</td>
 <td style="text-align: left;"></td>
 <td style="text-align: left;">Lev+5FU</td>
 <td style="text-align: left;">25 (46.3)</td>
 <td style="text-align: left;">279 (49.8)</td>
-<td style="text-align: left;">1.10 (0.61-1.98, p=0.755)</td>
-<td style="text-align: left;">1.07 (0.60-1.91 p=0.819)</td>
+<td style="text-align: left;">1.08 (0.60-1.95, p=0.805)</td>
+<td style="text-align: left;">1.05 (0.59-1.88 p=0.870)</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">7</td>
+<td style="text-align: left;">9</td>
 <td style="text-align: left;">sex</td>
 <td style="text-align: left;">Female</td>
 <td style="text-align: left;">26 (48.1)</td>
@@ -180,13 +181,13 @@ There are 2 outputs:
 <td style="text-align: left;">-</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">8</td>
+<td style="text-align: left;">10</td>
 <td style="text-align: left;"></td>
 <td style="text-align: left;">Male</td>
 <td style="text-align: left;">28 (51.9)</td>
 <td style="text-align: left;">290 (51.8)</td>
-<td style="text-align: left;">0.94 (0.52-1.68, p=0.822)</td>
-<td style="text-align: left;">0.97 (0.54-1.72 p=0.904)</td>
+<td style="text-align: left;">0.91 (0.50-1.64, p=0.757)</td>
+<td style="text-align: left;">0.94 (0.52-1.68 p=0.831)</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">1</td>
@@ -194,11 +195,11 @@ There are 2 outputs:
 <td style="text-align: left;">Mean (SD)</td>
 <td style="text-align: left;">62.5 (10.3)</td>
 <td style="text-align: left;">59.7 (12.1)</td>
-<td style="text-align: left;">0.97 (0.95-1.00, p=0.039)</td>
-<td style="text-align: left;">0.97 (0.94-1.00 p=0.022)</td>
+<td style="text-align: left;">0.97 (0.94-1.00, p=0.036)</td>
+<td style="text-align: left;">0.97 (0.94-0.99 p=0.020)</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">3</td>
+<td style="text-align: left;">5</td>
 <td style="text-align: left;">obstruct</td>
 <td style="text-align: left;">No</td>
 <td style="text-align: left;">38 (70.4)</td>
@@ -207,13 +208,13 @@ There are 2 outputs:
 <td style="text-align: left;">-</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">4</td>
+<td style="text-align: left;">6</td>
 <td style="text-align: left;"></td>
 <td style="text-align: left;">Yes</td>
 <td style="text-align: left;">16 (29.6)</td>
 <td style="text-align: left;">101 (18.0)</td>
-<td style="text-align: left;">0.42 (0.22-0.82, p=0.009)</td>
-<td style="text-align: left;">0.44 (0.23-0.83 p=0.012)</td>
+<td style="text-align: left;">0.42 (0.22-0.82, p=0.010)</td>
+<td style="text-align: left;">0.44 (0.23-0.84 p=0.014)</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">2</td>
@@ -221,11 +222,11 @@ There are 2 outputs:
 <td style="text-align: left;">Mean (SD)</td>
 <td style="text-align: left;">4.8 (3.3)</td>
 <td style="text-align: left;">3.5 (3.5)</td>
-<td style="text-align: left;">0.90 (0.84-0.96, p=0.001)</td>
-<td style="text-align: left;">0.90 (0.84-0.96 p=0.001)</td>
+<td style="text-align: left;">1.03 (0.92-1.18, p=0.666)</td>
+<td style="text-align: left;">1.02 (0.90-1.16 p=0.709)</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">10</td>
+<td style="text-align: left;">12</td>
 <td style="text-align: left;">surg</td>
 <td style="text-align: left;">Short</td>
 <td style="text-align: left;">37 (68.5)</td>
@@ -234,13 +235,31 @@ There are 2 outputs:
 <td style="text-align: left;">-</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">9</td>
+<td style="text-align: left;">11</td>
 <td style="text-align: left;"></td>
 <td style="text-align: left;">Long</td>
 <td style="text-align: left;">17 (31.5)</td>
 <td style="text-align: left;">139 (24.8)</td>
-<td style="text-align: left;">0.69 (0.38-1.32, p=0.250)</td>
-<td style="text-align: left;">0.73 (0.39-1.35 p=0.316)</td>
+<td style="text-align: left;">0.69 (0.37-1.32, p=0.245)</td>
+<td style="text-align: left;">0.72 (0.39-1.36 p=0.313)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">nodes5</td>
+<td style="text-align: left;">No</td>
+<td style="text-align: left;">27 (50.9)</td>
+<td style="text-align: left;">422 (77.3)</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;">-</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">4</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;">Yes</td>
+<td style="text-align: left;">26 (49.1)</td>
+<td style="text-align: left;">124 (22.7)</td>
+<td style="text-align: left;">0.22 (0.08-0.54, p=0.001)</td>
+<td style="text-align: left;">0.22 (0.09-0.56 p=0.002)</td>
 </tr>
 </tbody>
 </table>
@@ -275,8 +294,8 @@ There are 2 outputs:
 <td style="text-align: left;">tibble</td>
 <td style="text-align: left;">S3:glm</td>
 <td style="text-align: left;">Number in dataframe = 614, Number in model
-= 599, Missing = 15, AIC = 354.6, C-statistic = 0.678, H&amp;L =
-Chi-sq(8) 9.01 (p=0.342)</td>
+= 599, Missing = 15, AIC = 345.8, C-statistic = 0.688, H&amp;L =
+Chi-sq(8) 8.53 (p=0.384)</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">imputed</td>
@@ -284,8 +303,8 @@ Chi-sq(8) 9.01 (p=0.342)</td>
 <td style="text-align: left;">tibble</td>
 <td style="text-align: left;">S3:glm</td>
 <td style="text-align: left;">Number in dataframe = 614, Number in model
-= 614, Missing = 0, AIC = 361.1, C-statistic = 0.683, H&amp;L =
-Chi-sq(8) 4.00 (p=0.858)</td>
+= 614, Missing = 0, AIC = 352.1, C-statistic = 0.692, H&amp;L =
+Chi-sq(8) 7.05 (p=0.531)</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">imputed</td>
@@ -293,8 +312,8 @@ Chi-sq(8) 4.00 (p=0.858)</td>
 <td style="text-align: left;">tibble</td>
 <td style="text-align: left;">S3:glm</td>
 <td style="text-align: left;">Number in dataframe = 614, Number in model
-= 614, Missing = 0, AIC = 360.9, C-statistic = 0.684, H&amp;L =
-Chi-sq(8) 3.52 (p=0.898)</td>
+= 614, Missing = 0, AIC = 351.1, C-statistic = 0.694, H&amp;L =
+Chi-sq(8) 9.65 (p=0.290)</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">imputed</td>
@@ -302,8 +321,8 @@ Chi-sq(8) 3.52 (p=0.898)</td>
 <td style="text-align: left;">tibble</td>
 <td style="text-align: left;">S3:glm</td>
 <td style="text-align: left;">Number in dataframe = 614, Number in model
-= 614, Missing = 0, AIC = 360.7, C-statistic = 0.682, H&amp;L =
-Chi-sq(8) 3.97 (p=0.860)</td>
+= 614, Missing = 0, AIC = 352.3, C-statistic = 0.691, H&amp;L =
+Chi-sq(8) 9.81 (p=0.279)</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">imputed</td>
@@ -311,8 +330,8 @@ Chi-sq(8) 3.97 (p=0.860)</td>
 <td style="text-align: left;">tibble</td>
 <td style="text-align: left;">S3:glm</td>
 <td style="text-align: left;">Number in dataframe = 614, Number in model
-= 614, Missing = 0, AIC = 362.6, C-statistic = 0.674, H&amp;L =
-Chi-sq(8) 2.94 (p=0.938)</td>
+= 614, Missing = 0, AIC = 353.8, C-statistic = 0.688, H&amp;L =
+Chi-sq(8) 6.71 (p=0.568)</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">imputed</td>
@@ -320,8 +339,8 @@ Chi-sq(8) 2.94 (p=0.938)</td>
 <td style="text-align: left;">tibble</td>
 <td style="text-align: left;">S3:glm</td>
 <td style="text-align: left;">Number in dataframe = 614, Number in model
-= 614, Missing = 0, AIC = 362.4, C-statistic = 0.674, H&amp;L =
-Chi-sq(8) 2.65 (p=0.955)</td>
+= 614, Missing = 0, AIC = 354.3, C-statistic = 0.687, H&amp;L =
+Chi-sq(8) 6.63 (p=0.578)</td>
 </tr>
 </tbody>
 </table>
