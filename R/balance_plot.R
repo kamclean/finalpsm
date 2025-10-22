@@ -15,11 +15,6 @@
 #' @import purrr
 #' @export
 
-matchit_out <- output
-type = "love"
-threshold = 0.2
-
-
 balance_plot <- function(matchit_out, type = "jitter", threshold = 0.2){
   require(MatchIt);require(stringr);require(ggplot2);require(dplyr);require(tidyr);require(purrr)
 
