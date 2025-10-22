@@ -48,7 +48,7 @@ balance_table <- function(matchit_out, threshold = 0.2, p=FALSE){
 
   if(length(var_numeric)>=1){
     data_num <- data %>%
-      dplyr::select(all_of(c(all_of(var_numeric), "weights", "strata_01"))) %>%
+      dplyr::select(all_of(c(var_numeric, "weights", "strata_01"))) %>%
       dplyr::group_split(strata_01) %>%
       purrr::map_df(function(x){x %>%
           dplyr::group_by(strata_01) %>%
@@ -108,7 +108,7 @@ balance_table <- function(matchit_out, threshold = 0.2, p=FALSE){
     # Determine the weighted
 
     sum_fac <- data %>%
-      dplyr::select_at(vars(c("strata_01", all_of(var_factor), "weights"))) %>%
+      dplyr::select_at(vars(c("strata_01", var_factor, "weights"))) %>%
       dplyr::group_split(strata_01) %>%
       purrr::map_df(function(x){x %>%
           dplyr::group_by(strata_01) %>%
